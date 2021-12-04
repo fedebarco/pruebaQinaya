@@ -8,14 +8,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.Button
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.material.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -46,9 +41,9 @@ class MainActivity : ComponentActivity() {
 fun MainNavigation(model: MainViewModel){
     model.searchCountries()
     val countriesNames= model.countries.value
-    val prueba=model.respuesta.value
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = "main_page") {
+    NavHost(navController = navController, startDestination = "login_qinaya") {
+        composable("login_qinaya") { LoginQinaya(model = model) }
         composable("main_page") { MainPage(navController = navController) }
         composable("countries_screen") { CountriesScreen(countriesNames = countriesNames?: listOf("colombia"),model=model) }
         /*...*/
@@ -58,6 +53,31 @@ fun MainNavigation(model: MainViewModel){
 @Composable
 fun Greeting(name: String) {
     Text(text = "Hello $name!")
+}
+
+@Composable
+fun LoginQinaya(model: MainViewModel){
+    var textUser by remember { mutableStateOf("") }
+    var textPassword by remember { mutableStateOf("") }
+    val textResponse by model.toLogin.observeAsState()
+    Column(modifier = Modifier
+        .fillMaxWidth()
+        .padding(8.dp)) {
+        Column {
+            OutlinedTextField(value = textUser, onValueChange ={textUser=it},label = { Text(text = "Usuario:")} )
+            OutlinedTextField(value = textPassword, onValueChange ={textPassword=it},label = { Text(text = "Contraseña")} )
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = { model.rawJSON(textUser,textPassword) }
+            ) {
+                Text("Ingresa")
+            }
+            Text("$textResponse")
+        }
+
+
+    }
+
 }
 
 @Composable
@@ -73,7 +93,7 @@ fun MainPage(navController: NavController) {
 @Composable
 fun CountriesScreen(countriesNames:List<String>,model: MainViewModel) {
 
-    var prueba=model.respuesta.observeAsState()
+    val prueba=model.respuesta.observeAsState()
 
 
     Column(verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier

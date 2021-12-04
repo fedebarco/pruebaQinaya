@@ -3,7 +3,14 @@ package com.example.pruebaqinaya
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonParser
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -14,6 +21,7 @@ class MainViewModel:ViewModel() {
     val value = MutableLiveData<String>()
     val countries= MutableLiveData<List<String>>(listOf("colombia"))
     val respuesta= MutableLiveData<String>("hola")
+    val toLogin= MutableLiveData<String>("hola")
 
     private fun getRetrofit(): Retrofit {
         return Retrofit.Builder()
@@ -47,6 +55,45 @@ class MainViewModel:ViewModel() {
         }
 
 
+    }
+
+    fun rawJSON(user:String,password:String) {
+
+        // Create JSON using JSONObject
+        val jsonObject = JSONObject()
+        jsonObject.put("email", user)
+        jsonObject.put("password", password)
+
+        // Convert JSONObject to String
+        val jsonObjectString = jsonObject.toString()
+
+        // Create RequestBody ( We're not using any converter, like GsonConverter, MoshiConverter e.t.c, that's why we use RequestBody )
+        val requestBody = jsonObjectString.toRequestBody("application/json".toMediaTypeOrNull())
+
+        viewModelScope.launch {
+            // Do the POST request and get response
+            val response = getRetrofit().create(APIservice::class.java).userLogin(requestBody = requestBody)
+
+            withContext(Dispatchers.Main.immediate) {
+                if (response.isSuccessful) {
+
+                    val gson = GsonBuilder().setPrettyPrinting().create()
+                    val prettyJson = gson.toJson(
+                        JsonParser.parseString(
+                            response.body()
+                                ?.string() // About this thread blocking annotation : https://github.com/square/retrofit/issues/3255
+                        )
+                    )
+                    toLogin.postValue(prettyJson)
+
+                } else {
+                    toLogin.postValue(response.code().toString())
+
+                }
+
+            }
+
+        }
     }
 
 }
