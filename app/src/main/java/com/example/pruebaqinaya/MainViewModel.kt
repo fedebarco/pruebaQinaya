@@ -19,9 +19,11 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 class MainViewModel:ViewModel() {
     val value = MutableLiveData<String>()
-    val countries= MutableLiveData<List<String>>(listOf("colombia"))
-    val respuesta= MutableLiveData<String>("hola")
+    val countries= MutableLiveData<List<countriesResponse>>(listOf())
     val toLogin= MutableLiveData<String>("hola")
+    val pais=MutableLiveData<String>("Colombia")
+    val moneda=MutableLiveData<String>("COP")
+    val toregister= MutableLiveData<String>("hola")
 
     private fun getRetrofit(): Retrofit {
         return Retrofit.Builder()
@@ -36,11 +38,10 @@ class MainViewModel:ViewModel() {
                     call: Call<List<countriesResponse>>,
                     response: Response<List<countriesResponse>>
                 ) {
-                    respuesta.postValue(response.body().toString())
+                    countries.postValue(response.body())
                 }
 
                 override fun onFailure(call: Call<List<countriesResponse>>, t: Throwable) {
-                    respuesta.postValue("no funciono")
                 }
 
 
@@ -117,7 +118,7 @@ class MainViewModel:ViewModel() {
 
         viewModelScope.launch {
             // Do the POST request and get response
-            val response = getRetrofit().create(APIservice::class.java).userLogin(requestBody = requestBody)
+            val response = getRetrofit().create(APIservice::class.java).userRegister(requestBody = requestBody)
 
             withContext(Dispatchers.Main.immediate) {
                 if (response.isSuccessful) {
@@ -129,10 +130,10 @@ class MainViewModel:ViewModel() {
                                 ?.string() // About this thread blocking annotation : https://github.com/square/retrofit/issues/3255
                         )
                     )
-                    toLogin.postValue(prettyJson)
+                    toregister.postValue(prettyJson)
 
                 } else {
-                    toLogin.postValue(response.code().toString())
+                    toregister.postValue(response.code().toString())
 
                 }
 

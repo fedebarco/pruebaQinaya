@@ -26,6 +26,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val model: MainViewModel by viewModels()
+        model.searchCountries()
         setContent {
             PruebaQinayaTheme {
                 // A surface container using the 'background' color from the theme
@@ -39,15 +40,11 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainNavigation(model: MainViewModel){
-    model.searchCountries()
-    val countriesNames= model.countries.value
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "login_qinaya") {
         composable("login_qinaya") { LoginQinaya(model = model,navController = navController) }
         composable("register_qinaya") { RegisterScreen(model = model) }
         composable("main_page") { MainPage(navController = navController) }
-        composable("countries_screen") { CountriesScreen(countriesNames = countriesNames?: listOf("colombia"),model=model) }
-        /*...*/
     }
 
 }
@@ -87,40 +84,56 @@ fun LoginQinaya(model: MainViewModel,navController: NavController){
 
 @Composable
 fun RegisterScreen(model: MainViewModel){
-    var textUser by remember { mutableStateOf("") }
+    var textname by remember { mutableStateOf("") }
+    var textEmail by remember { mutableStateOf("") }
+    var textPhone by remember { mutableStateOf("") }
     var textPassword by remember { mutableStateOf("") }
-    val textResponse by model.toLogin.observeAsState()
-    val openDialog = remember { mutableStateOf(true) }
+    var textPassword2 by remember { mutableStateOf("") }
+    val textPais by model.pais.observeAsState()
+    val textresponse by model.toregister.observeAsState()
+    val textMoneda by model.moneda.observeAsState()
     val (showDialog, setShowDialog) =  remember { mutableStateOf(false) }
     Column(modifier = Modifier
         .fillMaxWidth()
         .padding(8.dp)) {
         Column {
-            OutlinedTextField(value = textUser, onValueChange ={textUser=it},label = { Text(text = "Nombre:")} )
-            OutlinedTextField(value = textPassword, onValueChange ={textPassword=it},label = { Text(text = "Email")} )
-            OutlinedTextField(value = textUser, onValueChange ={textUser=it},label = { Text(text = "contraseña:")} )
-            OutlinedTextField(value = textPassword, onValueChange ={textPassword=it},label = { Text(text = "contraseña")} )
-            OutlinedTextField(value = textPassword, onValueChange ={textPassword=it},label = { Text(text = "contraseña")} )
+            OutlinedTextField(value = textname, onValueChange ={textname=it},label = { Text(text = "Nombre:")} )
+            OutlinedTextField(value = textEmail, onValueChange ={textEmail=it},label = { Text(text = "Email")} )
+            OutlinedTextField(value = textPassword, onValueChange ={textPassword=it},label = { Text(text = "contraseña:")} )
+            OutlinedTextField(value = textPassword2, onValueChange ={textPassword2=it},label = { Text(text = "Confirmar contraseña")} )
+            OutlinedTextField(value = textPhone, onValueChange ={textPhone=it},label = { Text(text = "telefono")} )
             Button(
-                modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxWidth(),
                 onClick = {setShowDialog(true)}
             ) {
-                Text("Pais")
+                Text("$textPais")
             }
             Button(
-                modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxWidth(),
                 onClick = {setShowDialog(true)}
             ) {
-                Text("Moneda")
+                Text("$textMoneda")
             }
             Button(
                 modifier = Modifier.fillMaxWidth(),
-                onClick = { model.rawJSON(textUser,textPassword) }
+                onClick = {
+                    if (textPassword==textPassword2){
+                        model.registerJSON(textname,textEmail,1,textPhone,1,1,textPassword)
+                    }else{
+
+                    }
+                }
             ) {
                 Text("Registrate")
             }
-            Text("$textResponse")
-            DialogDemo(showDialog, setShowDialog)
+            Text("$textresponse")
+
+            DialogDemo(showDialog, setShowDialog,model)
+            CountriesScreen(showDialog, setShowDialog,model)
         }
 
 
@@ -129,37 +142,37 @@ fun RegisterScreen(model: MainViewModel){
 }
 
 @Composable
-fun DialogDemo(showDialog: Boolean, setShowDialog: (Boolean) -> Unit) {
+fun DialogDemo(showDialog: Boolean, setShowDialog: (Boolean) -> Unit,model: MainViewModel) {
     if (showDialog) {
         AlertDialog(
             onDismissRequest = {
+                setShowDialog(false)
             },
             title = {
-                Text("Title")
+                Text("Paises")
             },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        // Change the state to close the dialog
-                        setShowDialog(false)
-                    },
+            buttons ={
+                Column(
+                    modifier = Modifier.padding(all = 8.dp)
                 ) {
-                    Text("Confirm")
+                    Button(
+                        onClick = { setShowDialog(false)
+                            model.moneda.postValue("COP")}
+                    ) {
+                        Text("COP")
+                    }
+                    Button(
+                        onClick = {
+                            model.moneda.postValue("USD")
+                            setShowDialog(false) }
+                    ) {
+                        Text("USD")
+
+                    }
                 }
-            },
-            dismissButton = {
-                Button(
-                    onClick = {
-                        // Change the state to close the dialog
-                        setShowDialog(false)
-                    },
-                ) {
-                    Text("Dismiss")
-                }
-            },
-            text = {
-                Text("This is a text on the dialog")
-            },
+            }
+
+
         )
     }
 }
@@ -177,29 +190,44 @@ fun MainPage(navController: NavController) {
     }
 }
 @Composable
-fun CountriesScreen(countriesNames:List<String>,model: MainViewModel) {
+fun CountriesScreen(showDialog: Boolean, setShowDialog: (Boolean) -> Unit,model: MainViewModel) {
+    val countriesNames= model.countries.value!!
+    val countriesn= mutableListOf<String>()
+    for (i in countriesNames){
+        countriesn.add(i.name)
+    }
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                setShowDialog(false)
+            },
+            title = {
+                Text("Paises")
+            },
+            buttons ={
+                Column(verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+                    .background(MaterialTheme.colors.background)) {
+                    LazyColumn{
+                        items(countriesn){countryName->
+                            MyCountries(name = countryName )
+                        }
+                    }
 
-    val prueba=model.respuesta.observeAsState()
-
-
-    Column(verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
-        .fillMaxWidth()
-        .padding(8.dp)
-        .background(MaterialTheme.colors.background)) {
-        Text(text = "Paises")
-        Text(text = " la respuesta es: $prueba")
-        LazyColumn{
-            items(countriesNames){countryName->
-                MyCountries(name = countryName )
+                }
             }
-        }
 
+
+        )
     }
 }
 
 @Composable
 fun MyCountries(name:String){
-    Text(text=name)
+    Button(onClick = { /*TODO*/ }) {
+        Text(text=name)
+    }
 }
 
 
