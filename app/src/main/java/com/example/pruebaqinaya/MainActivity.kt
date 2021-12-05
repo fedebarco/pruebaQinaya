@@ -45,7 +45,7 @@ fun MainNavigation(model: MainViewModel){
     NavHost(navController = navController, startDestination = "login_qinaya") {
         composable("login_qinaya") { LoginQinaya(model = model,navController = navController) }
         composable("register_qinaya") { RegisterScreen(model = model) }
-        composable("main_page") { MainPage(navController = navController) }
+        composable("main_page") { MainPage(navController = navController,model = model) }
     }
 
 
@@ -57,6 +57,7 @@ fun Greeting(name: String) {
 
 @Composable
 fun LoginQinaya(model: MainViewModel,navController: NavController){
+    val confirmation by model.tonewpage.observeAsState()
     var textUser by remember { mutableStateOf("") }
     var textPassword by remember { mutableStateOf("") }
     val textResponse by model.toLogin.observeAsState()
@@ -77,7 +78,7 @@ fun LoginQinaya(model: MainViewModel,navController: NavController){
                 Text("registrate")
             }
             Text("$textResponse")
-            if (textUser=="fede"){
+            if (confirmation == true){
                 navController.navigate("main_page")
             }
 
@@ -186,10 +187,25 @@ fun DialogDemo(showDialog: Boolean, setShowDialog: (Boolean) -> Unit,model: Main
 
 
 @Composable
-fun MainPage(navController: NavController) {
-    Column {
-
+fun MainPage(navController: NavController,model: MainViewModel) {
+    model.cimputerJSON(1)
+    val computadoras=model.maquinas.value!!
+    val miscomputadoras= mutableListOf<String>()
+    for (i in computadoras){
+        miscomputadoras.add(i.userMachine.nombreMaquina)
     }
+
+    Column(verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
+        .fillMaxWidth()
+        .padding(8.dp)
+        .background(MaterialTheme.colors.background)) {
+        LazyColumn{
+            items(miscomputadoras){micompu->
+                MyCountries(name = micompu )
+            }
+        }
+    }
+
 }
 @Composable
 fun CountriesScreen(showDialog: Boolean, setShowDialog: (Boolean) -> Unit,model: MainViewModel) {

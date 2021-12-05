@@ -19,12 +19,13 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 class MainViewModel:ViewModel() {
     val value = MutableLiveData<String>()
-    val countries= MutableLiveData<List<countriesResponse>>(listOf())
-    val toLogin= MutableLiveData<String>("hola")
-    val pais=MutableLiveData<String>("Colombia")
-    val moneda=MutableLiveData<String>("COP")
-    val toregister= MutableLiveData<String>("hola")
-    val tonewpage=MutableLiveData<Boolean>(false)
+    val countries = MutableLiveData<List<countriesResponse>>(listOf())
+    val maquinas = MutableLiveData<List<Root2>>(listOf())
+    val toLogin = MutableLiveData<String>("hola")
+    val pais = MutableLiveData<String>("Colombia")
+    val moneda = MutableLiveData<String>("COP")
+    val toregister = MutableLiveData<String>("hola")
+    val tonewpage = MutableLiveData<Boolean>(false)
 
     private fun getRetrofit(): Retrofit {
         return Retrofit.Builder()
@@ -32,26 +33,29 @@ class MainViewModel:ViewModel() {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
-    fun searchCountries(){
+
+    fun searchCountries() {
         viewModelScope.launch {
-            val call=getRetrofit().create(APIservice::class.java).getcountries("v2/mobile/countries").enqueue(object: Callback<List<countriesResponse>>{
-                override fun onResponse(
-                    call: Call<List<countriesResponse>>,
-                    response: Response<List<countriesResponse>>
-                ) {
-                    countries.postValue(response.body())
-                }
+            val call =
+                getRetrofit().create(APIservice::class.java).getcountries("v2/mobile/countries")
+                    .enqueue(object : Callback<List<countriesResponse>> {
+                        override fun onResponse(
+                            call: Call<List<countriesResponse>>,
+                            response: Response<List<countriesResponse>>
+                        ) {
+                            countries.postValue(response.body())
+                        }
 
-                override fun onFailure(call: Call<List<countriesResponse>>, t: Throwable) {
-                }
+                        override fun onFailure(call: Call<List<countriesResponse>>, t: Throwable) {
+                        }
 
 
-            })
+                    })
             //val countriesCall=call.body()
 
-                //respuesta.postValue(countriesCall.toString())
-                //val names=countriesCall?.id ?: emptyList()
-                //countries.postValue(names)
+            //respuesta.postValue(countriesCall.toString())
+            //val names=countriesCall?.id ?: emptyList()
+            //countries.postValue(names)
 
 
         }
@@ -59,7 +63,7 @@ class MainViewModel:ViewModel() {
 
     }
 
-    fun rawJSON(user:String,password:String) {
+    fun rawJSON(user: String, password: String) {
 
         // Create JSON using JSONObjec
         val jsonObject = JSONObject()
@@ -74,7 +78,8 @@ class MainViewModel:ViewModel() {
 
         viewModelScope.launch {
             // Do the POST request and get response
-            val response = getRetrofit().create(APIservice::class.java).userLogin(requestBody = requestBody)
+            val response =
+                getRetrofit().create(APIservice::class.java).userLogin(requestBody = requestBody)
 
             withContext(Dispatchers.Main.immediate) {
                 if (response.isSuccessful) {
@@ -87,7 +92,7 @@ class MainViewModel:ViewModel() {
                         )
                     )
                     toLogin.postValue(prettyJson)
-                    toLogin.postValue(response.code().toString())
+                    tonewpage.postValue(true)
 
 
                 } else {
@@ -103,11 +108,19 @@ class MainViewModel:ViewModel() {
 
     }
 
-    fun registerJSON(name:String,user:String,country:Int,phone:String,sub:Int,curency:Int,password:String) {
+    fun registerJSON(
+        name: String,
+        user: String,
+        country: Int,
+        phone: String,
+        sub: Int,
+        curency: Int,
+        password: String
+    ) {
 
         // Create JSON using JSONObject
         val jsonObject = JSONObject()
-        jsonObject.put("name",name)
+        jsonObject.put("name", name)
         jsonObject.put("email", user)
         jsonObject.put("country", country)
         jsonObject.put("phone", phone)
@@ -124,7 +137,8 @@ class MainViewModel:ViewModel() {
 
         viewModelScope.launch {
             // Do the POST request and get response
-            val response = getRetrofit().create(APIservice::class.java).userRegister(requestBody = requestBody)
+            val response =
+                getRetrofit().create(APIservice::class.java).userRegister(requestBody = requestBody)
 
             withContext(Dispatchers.Main.immediate) {
                 if (response.isSuccessful) {
@@ -147,12 +161,13 @@ class MainViewModel:ViewModel() {
 
         }
     }
-    fun cimputerJSON(id:Int) {
+
+    fun cimputerJSON(id: Int) {
+        viewModelScope.launch {
 
         // Create JSON using JSONObject
         val jsonObject = JSONObject()
-        jsonObject.put("id",id)
-
+        jsonObject.put("id", id)
 
 
         // Convert JSONObject to String
@@ -161,34 +176,23 @@ class MainViewModel:ViewModel() {
         // Create RequestBody ( We're not using any converter, like GsonConverter, MoshiConverter e.t.c, that's why we use RequestBody )
         val requestBody = jsonObjectString.toRequestBody("application/json".toMediaTypeOrNull())
 
-        viewModelScope.launch {
+
             // Do the POST request and get response
-            val response = getRetrofit().create(APIservice::class.java).userComputers(requestBody = requestBody)
+            val response2 = getRetrofit().create(APIservice::class.java)
+                .userComputers(requestBody = requestBody).enqueue(object : Callback<List<Root2>> {
+                override fun onResponse(call: Call<List<Root2>>, response: Response<List<Root2>>) {
+                    maquinas.postValue(response.body())
+                }
 
-            withContext(Dispatchers.Main.immediate) {
-                if (response.isSuccessful) {
-
-                    val gson = GsonBuilder().setPrettyPrinting().create()
-                    val prettyJson = gson.toJson(
-                        JsonParser.parseString(
-                            response.body()
-                                ?.string() // About this thread blocking annotation : https://github.com/square/retrofit/issues/3255
-                        )
-                    )
-
-
-                } else {
-
+                override fun onFailure(call: Call<List<Root2>>, t: Throwable) {
 
                 }
 
-            }
 
+            })
         }
     }
-
 }
-
 
 
 
