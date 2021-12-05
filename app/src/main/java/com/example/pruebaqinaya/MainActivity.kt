@@ -49,7 +49,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainNavigation(model: MainViewModel){
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = "remoto") {
+    NavHost(navController = navController, startDestination = "login_qinaya") {
         composable("login_qinaya") { LoginQinaya(model = model,navController = navController) }
         composable("register_qinaya") { RegisterScreen(model = model) }
         composable("main_page") { MainPage(navController = navController,model = model)}
@@ -206,7 +206,7 @@ fun MainPage(navController: NavController,model: MainViewModel) {
         Text("$textresponse")
         LazyColumn{
             items(miscomputadoras){micompu->
-                MyCountries(name = micompu )
+                MyLinux(name = micompu,navController = navController)
             }
         }
     }
@@ -216,7 +216,7 @@ fun MainPage(navController: NavController,model: MainViewModel) {
 @Composable
 fun Remoto(){
 
-    val url="https://mirage1.qinaya.co/#/?token=756A1D1BB81041A4791F1908A2C06512FF859283D084AA5CD8CD7739D439EAEE"
+    val url="https://www.google.com/"
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -289,6 +289,13 @@ fun CountriesScreen(showDialog: Boolean, setShowDialog: (Boolean) -> Unit,model:
 
 
         )
+    }
+}
+
+@Composable
+fun MyLinux(name:String,navController:NavController){
+    Button(onClick = { navController.navigate("remoto")}) {
+        Text(text=name)
     }
 }
 
