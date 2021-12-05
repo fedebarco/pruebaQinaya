@@ -24,6 +24,7 @@ class MainViewModel:ViewModel() {
     val pais=MutableLiveData<String>("Colombia")
     val moneda=MutableLiveData<String>("COP")
     val toregister= MutableLiveData<String>("hola")
+    val tonewpage=MutableLiveData<Boolean>(false)
 
     private fun getRetrofit(): Retrofit {
         return Retrofit.Builder()
@@ -60,7 +61,7 @@ class MainViewModel:ViewModel() {
 
     fun rawJSON(user:String,password:String) {
 
-        // Create JSON using JSONObject
+        // Create JSON using JSONObjec
         val jsonObject = JSONObject()
         jsonObject.put("email", user)
         jsonObject.put("password", password)
@@ -86,15 +87,20 @@ class MainViewModel:ViewModel() {
                         )
                     )
                     toLogin.postValue(prettyJson)
+                    toLogin.postValue(response.code().toString())
+
 
                 } else {
                     toLogin.postValue(response.code().toString())
 
                 }
 
+
             }
 
+
         }
+
     }
 
     fun registerJSON(name:String,user:String,country:Int,phone:String,sub:Int,curency:Int,password:String) {
@@ -134,6 +140,45 @@ class MainViewModel:ViewModel() {
 
                 } else {
                     toregister.postValue(response.code().toString())
+
+                }
+
+            }
+
+        }
+    }
+    fun cimputerJSON(id:Int) {
+
+        // Create JSON using JSONObject
+        val jsonObject = JSONObject()
+        jsonObject.put("id",id)
+
+
+
+        // Convert JSONObject to String
+        val jsonObjectString = jsonObject.toString()
+
+        // Create RequestBody ( We're not using any converter, like GsonConverter, MoshiConverter e.t.c, that's why we use RequestBody )
+        val requestBody = jsonObjectString.toRequestBody("application/json".toMediaTypeOrNull())
+
+        viewModelScope.launch {
+            // Do the POST request and get response
+            val response = getRetrofit().create(APIservice::class.java).userComputers(requestBody = requestBody)
+
+            withContext(Dispatchers.Main.immediate) {
+                if (response.isSuccessful) {
+
+                    val gson = GsonBuilder().setPrettyPrinting().create()
+                    val prettyJson = gson.toJson(
+                        JsonParser.parseString(
+                            response.body()
+                                ?.string() // About this thread blocking annotation : https://github.com/square/retrofit/issues/3255
+                        )
+                    )
+
+
+                } else {
+
 
                 }
 

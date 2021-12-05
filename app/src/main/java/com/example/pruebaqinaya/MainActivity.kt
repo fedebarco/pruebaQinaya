@@ -1,5 +1,6 @@
 package com.example.pruebaqinaya
 
+
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -47,6 +48,7 @@ fun MainNavigation(model: MainViewModel){
         composable("main_page") { MainPage(navController = navController) }
     }
 
+
 }
 @Composable
 fun Greeting(name: String) {
@@ -66,7 +68,8 @@ fun LoginQinaya(model: MainViewModel,navController: NavController){
             OutlinedTextField(value = textPassword, onValueChange ={textPassword=it},label = { Text(text = "Contraseña")} )
             Button(
                 modifier = Modifier.fillMaxWidth(),
-                onClick = { model.rawJSON(textUser,textPassword) }
+                onClick = { model.rawJSON(textUser,textPassword)
+                }
             ) {
                 Text("Ingresa")
             }
@@ -74,6 +77,9 @@ fun LoginQinaya(model: MainViewModel,navController: NavController){
                 Text("registrate")
             }
             Text("$textResponse")
+            if (textUser=="fede"){
+                navController.navigate("main_page")
+            }
 
         }
 
@@ -124,7 +130,7 @@ fun RegisterScreen(model: MainViewModel){
                     if (textPassword==textPassword2){
                         model.registerJSON(textname,textEmail,1,textPhone,1,1,textPassword)
                     }else{
-
+                        model.toregister.postValue("las contraseñas no coinciden")
                     }
                 }
             ) {
@@ -181,11 +187,7 @@ fun DialogDemo(showDialog: Boolean, setShowDialog: (Boolean) -> Unit,model: Main
 
 @Composable
 fun MainPage(navController: NavController) {
-    Row {
-        Button(onClick = {navController.navigate("countries_screen")}) {
-            Text(text = "Paises:")
-
-        }
+    Column {
 
     }
 }
