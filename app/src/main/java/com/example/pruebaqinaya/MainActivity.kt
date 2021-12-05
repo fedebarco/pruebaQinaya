@@ -2,6 +2,9 @@ package com.example.pruebaqinaya
 
 
 import android.os.Bundle
+import android.webkit.WebResourceRequest
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -14,8 +17,12 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -42,10 +49,12 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainNavigation(model: MainViewModel){
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = "login_qinaya") {
+    NavHost(navController = navController, startDestination = "remoto") {
         composable("login_qinaya") { LoginQinaya(model = model,navController = navController) }
         composable("register_qinaya") { RegisterScreen(model = model) }
-        composable("main_page") { MainPage(navController = navController,model = model) }
+        composable("main_page") { MainPage(navController = navController,model = model)}
+        composable("remoto"){ Remoto()}
+
     }
 
 
@@ -202,6 +211,52 @@ fun MainPage(navController: NavController,model: MainViewModel) {
         }
     }
 
+}
+
+@Composable
+fun Remoto(){
+
+    val url="https://mirage1.qinaya.co/#/?token=756A1D1BB81041A4791F1908A2C06512FF859283D084AA5CD8CD7739D439EAEE"
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+                .background(MaterialTheme.colors.primary)
+        ) {
+            Text(
+                text = "WebView Page",
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        Column {
+            AndroidView(
+                factory = {
+                    WebView(it).apply {
+                        webViewClient = object : WebViewClient() {
+                            override fun shouldOverrideUrlLoading(
+                                view: WebView?,
+                                request: WebResourceRequest?
+                            ): Boolean {
+                                return false
+                            }
+                        }
+                    }
+                }, update = {
+                    it.loadUrl("$url")
+                }
+            )
+        }
+    }
 }
 @Composable
 fun CountriesScreen(showDialog: Boolean, setShowDialog: (Boolean) -> Unit,model: MainViewModel) {
