@@ -43,7 +43,8 @@ fun MainNavigation(model: MainViewModel){
     val countriesNames= model.countries.value
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "login_qinaya") {
-        composable("login_qinaya") { LoginQinaya(model = model) }
+        composable("login_qinaya") { LoginQinaya(model = model,navController = navController) }
+        composable("register_qinaya") { RegisterScreen(model = model) }
         composable("main_page") { MainPage(navController = navController) }
         composable("countries_screen") { CountriesScreen(countriesNames = countriesNames?: listOf("colombia"),model=model) }
         /*...*/
@@ -56,7 +57,7 @@ fun Greeting(name: String) {
 }
 
 @Composable
-fun LoginQinaya(model: MainViewModel){
+fun LoginQinaya(model: MainViewModel,navController: NavController){
     var textUser by remember { mutableStateOf("") }
     var textPassword by remember { mutableStateOf("") }
     val textResponse by model.toLogin.observeAsState()
@@ -72,13 +73,98 @@ fun LoginQinaya(model: MainViewModel){
             ) {
                 Text("Ingresa")
             }
+            TextButton(onClick = { navController.navigate("register_qinaya") }) {
+                Text("registrate")
+            }
             Text("$textResponse")
+
         }
 
 
     }
 
 }
+
+@Composable
+fun RegisterScreen(model: MainViewModel){
+    var textUser by remember { mutableStateOf("") }
+    var textPassword by remember { mutableStateOf("") }
+    val textResponse by model.toLogin.observeAsState()
+    val openDialog = remember { mutableStateOf(true) }
+    val (showDialog, setShowDialog) =  remember { mutableStateOf(false) }
+    Column(modifier = Modifier
+        .fillMaxWidth()
+        .padding(8.dp)) {
+        Column {
+            OutlinedTextField(value = textUser, onValueChange ={textUser=it},label = { Text(text = "Nombre:")} )
+            OutlinedTextField(value = textPassword, onValueChange ={textPassword=it},label = { Text(text = "Email")} )
+            OutlinedTextField(value = textUser, onValueChange ={textUser=it},label = { Text(text = "contraseña:")} )
+            OutlinedTextField(value = textPassword, onValueChange ={textPassword=it},label = { Text(text = "contraseña")} )
+            OutlinedTextField(value = textPassword, onValueChange ={textPassword=it},label = { Text(text = "contraseña")} )
+            Button(
+                modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                onClick = {setShowDialog(true)}
+            ) {
+                Text("Pais")
+            }
+            Button(
+                modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                onClick = {setShowDialog(true)}
+            ) {
+                Text("Moneda")
+            }
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = { model.rawJSON(textUser,textPassword) }
+            ) {
+                Text("Registrate")
+            }
+            Text("$textResponse")
+            DialogDemo(showDialog, setShowDialog)
+        }
+
+
+    }
+
+}
+
+@Composable
+fun DialogDemo(showDialog: Boolean, setShowDialog: (Boolean) -> Unit) {
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = {
+            },
+            title = {
+                Text("Title")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        // Change the state to close the dialog
+                        setShowDialog(false)
+                    },
+                ) {
+                    Text("Confirm")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        // Change the state to close the dialog
+                        setShowDialog(false)
+                    },
+                ) {
+                    Text("Dismiss")
+                }
+            },
+            text = {
+                Text("This is a text on the dialog")
+            },
+        )
+    }
+}
+
+
 
 @Composable
 fun MainPage(navController: NavController) {

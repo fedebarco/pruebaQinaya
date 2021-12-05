@@ -17,4 +17,7 @@ interface APIservice {
     @POST ("v2/mobile/login")
     suspend fun userLogin(@Body requestBody: RequestBody):Response<ResponseBody>
 
+    @POST ("v2/mobile/register")
+    suspend fun userRegister(@Body requestBody: RequestBody):Response<ResponseBody>
+
 }
