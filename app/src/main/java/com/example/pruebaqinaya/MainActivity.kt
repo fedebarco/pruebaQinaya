@@ -57,7 +57,6 @@ fun Greeting(name: String) {
 
 @Composable
 fun LoginQinaya(model: MainViewModel,navController: NavController){
-    val confirmation by model.tonewpage.observeAsState()
     var textUser by remember { mutableStateOf("") }
     var textPassword by remember { mutableStateOf("") }
     val textResponse by model.toLogin.observeAsState()
@@ -69,8 +68,7 @@ fun LoginQinaya(model: MainViewModel,navController: NavController){
             OutlinedTextField(value = textPassword, onValueChange ={textPassword=it},label = { Text(text = "Contraseña")} )
             Button(
                 modifier = Modifier.fillMaxWidth(),
-                onClick = { model.rawJSON(textUser,textPassword)
-                }
+                onClick = { model.rawJSON(textUser,textPassword,navController) }
             ) {
                 Text("Ingresa")
             }
@@ -78,9 +76,6 @@ fun LoginQinaya(model: MainViewModel,navController: NavController){
                 Text("registrate")
             }
             Text("$textResponse")
-            if (confirmation == true){
-                navController.navigate("main_page")
-            }
 
         }
 
@@ -188,9 +183,9 @@ fun DialogDemo(showDialog: Boolean, setShowDialog: (Boolean) -> Unit,model: Main
 
 @Composable
 fun MainPage(navController: NavController,model: MainViewModel) {
-    model.cimputerJSON(1)
-    val computadoras=model.maquinas.value!!
+    val computadoras=model.UserComputers.value!!
     val miscomputadoras= mutableListOf<String>()
+    val textresponse=model.toComputers.observeAsState()
     for (i in computadoras){
         miscomputadoras.add(i.userMachine.nombreMaquina)
     }
@@ -199,6 +194,7 @@ fun MainPage(navController: NavController,model: MainViewModel) {
         .fillMaxWidth()
         .padding(8.dp)
         .background(MaterialTheme.colors.background)) {
+        Text("$textresponse")
         LazyColumn{
             items(miscomputadoras){micompu->
                 MyCountries(name = micompu )

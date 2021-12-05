@@ -3,6 +3,7 @@ package com.example.pruebaqinaya
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers
@@ -20,12 +21,14 @@ import retrofit2.converter.gson.GsonConverterFactory
 class MainViewModel:ViewModel() {
     val value = MutableLiveData<String>()
     val countries = MutableLiveData<List<countriesResponse>>(listOf())
-    val maquinas = MutableLiveData<List<Root2>>(listOf())
+    val toComputers= MutableLiveData<String>("hola")
     val toLogin = MutableLiveData<String>("hola")
     val pais = MutableLiveData<String>("Colombia")
     val moneda = MutableLiveData<String>("COP")
     val toregister = MutableLiveData<String>("hola")
-    val tonewpage = MutableLiveData<Boolean>(false)
+    val userMain=MutableLiveData<userResponse>()
+    val UserComputers=MutableLiveData<List<computeresponse>>(listOf())
+
 
     private fun getRetrofit(): Retrofit {
         return Retrofit.Builder()
@@ -63,7 +66,7 @@ class MainViewModel:ViewModel() {
 
     }
 
-    fun rawJSON(user: String, password: String) {
+    fun rawJSON(user: String, password: String,navController: NavController) {
 
         // Create JSON using JSONObjec
         val jsonObject = JSONObject()
@@ -76,35 +79,26 @@ class MainViewModel:ViewModel() {
         // Create RequestBody ( We're not using any converter, like GsonConverter, MoshiConverter e.t.c, that's why we use RequestBody )
         val requestBody = jsonObjectString.toRequestBody("application/json".toMediaTypeOrNull())
 
-        viewModelScope.launch {
-            // Do the POST request and get response
-            val response =
-                getRetrofit().create(APIservice::class.java).userLogin(requestBody = requestBody)
 
-            withContext(Dispatchers.Main.immediate) {
-                if (response.isSuccessful) {
-
-                    val gson = GsonBuilder().setPrettyPrinting().create()
-                    val prettyJson = gson.toJson(
-                        JsonParser.parseString(
-                            response.body()
-                                ?.string() // About this thread blocking annotation : https://github.com/square/retrofit/issues/3255
-                        )
-                    )
-                    toLogin.postValue(prettyJson)
-                    tonewpage.postValue(true)
-
-
-                } else {
-                    toLogin.postValue(response.code().toString())
-
+        getRetrofit().create(APIservice::class.java).userLogin(requestBody = requestBody).enqueue(object:Callback<userResponse>{
+            override fun onResponse(call: Call<userResponse>, response: Response<userResponse>) {
+                if (response.isSuccessful){
+                    toComputers.postValue(response.body()!!.user.id.toString())
+                    cimputerJSON(response.body()!!.user.id,navController)
+                   // navController.navigate("main_page")
                 }
-
+                else{
+                    toLogin.postValue(response.code().toString())
+                }
 
             }
 
+            override fun onFailure(call: Call<userResponse>, t: Throwable) {
 
-        }
+            }
+
+        })
+
 
     }
 
@@ -162,34 +156,46 @@ class MainViewModel:ViewModel() {
         }
     }
 
-    fun cimputerJSON(id: Int) {
+    fun cimputerJSON(id: Long,navController: NavController) {
         viewModelScope.launch {
 
-        // Create JSON using JSONObject
-        val jsonObject = JSONObject()
-        jsonObject.put("id", id)
+
+            // Create JSON using JSONObject
+            val jsonObject = JSONObject()
+            jsonObject.put("id", id)
 
 
-        // Convert JSONObject to String
-        val jsonObjectString = jsonObject.toString()
+            // Convert JSONObject to String
+            val jsonObjectString = jsonObject.toString()
 
-        // Create RequestBody ( We're not using any converter, like GsonConverter, MoshiConverter e.t.c, that's why we use RequestBody )
-        val requestBody = jsonObjectString.toRequestBody("application/json".toMediaTypeOrNull())
+            // Create RequestBody ( We're not using any converter, like GsonConverter, MoshiConverter e.t.c, that's why we use RequestBody )
+            val requestBody = jsonObjectString.toRequestBody("application/json".toMediaTypeOrNull())
+
 
 
             // Do the POST request and get response
-            val response2 = getRetrofit().create(APIservice::class.java)
-                .userComputers(requestBody = requestBody).enqueue(object : Callback<List<Root2>> {
-                override fun onResponse(call: Call<List<Root2>>, response: Response<List<Root2>>) {
-                    maquinas.postValue(response.body())
-                }
 
-                override fun onFailure(call: Call<List<Root2>>, t: Throwable) {
+            getRetrofit().create(APIservice::class.java).userComputers(requestBody = requestBody)
+                .enqueue(object:Callback<List<computeresponse>> {
+                    override fun onResponse(
+                        call: Call<List<computeresponse>>,
+                        response: Response<List<computeresponse>>
+                    ) {
+                        if (response.isSuccessful){
+                            UserComputers.postValue(response.body())
+                            toComputers.postValue(response.code().toString())
+                            toComputers.postValue("que pasa mijo")
+                            navController.navigate("main_page")
+                        }else{
+                            toComputers.postValue("que pasa mijo")
+                        }
+                    }
 
-                }
+                    override fun onFailure(call: Call<List<computeresponse>>, t: Throwable) {
+                        toComputers.postValue("que pasa perro")
 
-
-            })
+                    }
+                })
         }
     }
 }

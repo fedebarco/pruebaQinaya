@@ -1,17 +1,15 @@
 package com.example.pruebaqinaya
 
 import com.google.gson.annotations.SerializedName
-data class Root (
-    @SerializedName("")
-    val lista:List<Root2>,
-)
 
-data class Root2(
+
+data class computeresponse(
     @SerializedName("user_machine")
     val userMachine: UserMachine,
 )
 
 data class UserMachine(
+    @SerializedName("id")
     val id: Long,
     @SerializedName("plan_activo")
     val planActivo: Boolean,
