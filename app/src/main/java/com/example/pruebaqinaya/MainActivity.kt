@@ -2,6 +2,7 @@ package com.example.pruebaqinaya
 
 
 import android.os.Bundle
+import android.view.ViewGroup
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -24,9 +25,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.pruebaqinaya.ui.theme.PruebaQinayaTheme
 
 
@@ -53,12 +56,12 @@ fun MainNavigation(model: MainViewModel){
         composable("login_qinaya") { LoginQinaya(model = model,navController = navController) }
         composable("register_qinaya") { RegisterScreen(model = model) }
         composable("main_page") { MainPage(navController = navController,model = model)}
-        composable("remoto"){ Remoto()}
+        composable("remoto") { Remoto(model=model)}
+        }
 
     }
 
 
-}
 @Composable
 fun Greeting(name: String) {
     Text(text = "Hello $name!")
@@ -193,11 +196,7 @@ fun DialogDemo(showDialog: Boolean, setShowDialog: (Boolean) -> Unit,model: Main
 @Composable
 fun MainPage(navController: NavController,model: MainViewModel) {
     val computadoras=model.UserComputers.value!!
-    val miscomputadoras= mutableListOf<String>()
     val textresponse=model.toComputers.observeAsState()
-    for (i in computadoras){
-        miscomputadoras.add(i.userMachine.nombreMaquina)
-    }
 
     Column(verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
         .fillMaxWidth()
@@ -205,8 +204,8 @@ fun MainPage(navController: NavController,model: MainViewModel) {
         .background(MaterialTheme.colors.background)) {
         Text("$textresponse")
         LazyColumn{
-            items(miscomputadoras){micompu->
-                MyLinux(name = micompu,navController = navController)
+            items(computadoras){micompu->
+                MyLinux(name = micompu.userMachine.nombreMaquina,link =micompu.userMachine.url,navController = navController,model = model)
             }
         }
     }
@@ -214,9 +213,10 @@ fun MainPage(navController: NavController,model: MainViewModel) {
 }
 
 @Composable
-fun Remoto(){
+fun Remoto(model: MainViewModel){
 
-    val url="https://www.google.com/"
+    val url=model.linkmaquina.value
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -231,7 +231,7 @@ fun Remoto(){
                 .background(MaterialTheme.colors.primary)
         ) {
             Text(
-                text = "WebView Page",
+                text = "$url",
                 color = Color.White,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
@@ -242,17 +242,17 @@ fun Remoto(){
             AndroidView(
                 factory = {
                     WebView(it).apply {
-                        webViewClient = object : WebViewClient() {
-                            override fun shouldOverrideUrlLoading(
-                                view: WebView?,
-                                request: WebResourceRequest?
-                            ): Boolean {
-                                return false
-                            }
-                        }
+                        layoutParams = ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.FILL_PARENT,
+                            ViewGroup.LayoutParams.FILL_PARENT,
+
+                        )
+                        this.getSettings().setJavaScriptEnabled(true)
+                        this.setWebViewClient(WebViewClient())
+
                     }
                 }, update = {
-                    it.loadUrl("$url")
+                    it.loadUrl("${url}")
                 }
             )
         }
@@ -293,8 +293,11 @@ fun CountriesScreen(showDialog: Boolean, setShowDialog: (Boolean) -> Unit,model:
 }
 
 @Composable
-fun MyLinux(name:String,navController:NavController){
-    Button(onClick = { navController.navigate("remoto")}) {
+fun MyLinux(name:String,link:String,navController:NavController,model: MainViewModel){
+    Button(onClick = { navController.navigate("remoto")
+        model.linkmaquina.postValue(link)
+
+    }) {
         Text(text=name)
     }
 }

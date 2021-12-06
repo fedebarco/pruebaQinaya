@@ -28,6 +28,7 @@ class MainViewModel:ViewModel() {
     val toregister = MutableLiveData<String>("hola")
     val userMain=MutableLiveData<userResponse>()
     val UserComputers=MutableLiveData<List<computeresponse>>(listOf())
+    val linkmaquina=MutableLiveData<String>()
 
 
     private fun getRetrofit(): Retrofit {
