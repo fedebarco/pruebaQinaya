@@ -23,4 +23,7 @@ interface APIservice {
     @POST ("v2/mobile/user_home")
     fun userComputers(@Body requestBody: RequestBody):Call<List<computeresponse>>
 
+    @POST ("v2/mobile/start_trial")
+    fun userTrial(@Body requestBody: RequestBody):Call<List<trialresponse>>
+
 }

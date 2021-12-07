@@ -3,7 +3,6 @@ package com.example.pruebaqinaya
 
 import android.os.Bundle
 import android.view.ViewGroup
-import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
@@ -25,11 +24,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.example.pruebaqinaya.ui.theme.PruebaQinayaTheme
 
 
@@ -197,6 +194,7 @@ fun DialogDemo(showDialog: Boolean, setShowDialog: (Boolean) -> Unit,model: Main
 fun MainPage(navController: NavController,model: MainViewModel) {
     val computadoras=model.UserComputers.value!!
     val textresponse=model.toComputers.observeAsState()
+    val (showDialog, setShowDialog) =  remember { mutableStateOf(true) }
 
     Column(verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
         .fillMaxWidth()
@@ -208,7 +206,9 @@ fun MainPage(navController: NavController,model: MainViewModel) {
                 MyLinux(name = micompu.userMachine.nombreMaquina,link =micompu.userMachine.url,navController = navController,model = model)
             }
         }
+        AlertDialogTrial(showDialog, setShowDialog)
     }
+
 
 }
 
@@ -243,12 +243,12 @@ fun Remoto(model: MainViewModel){
                 factory = {
                     WebView(it).apply {
                         layoutParams = ViewGroup.LayoutParams(
-                            ViewGroup.LayoutParams.FILL_PARENT,
-                            ViewGroup.LayoutParams.FILL_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT,
 
                         )
-                        this.getSettings().setJavaScriptEnabled(true)
-                        this.setWebViewClient(WebViewClient())
+                        this.settings.javaScriptEnabled = true
+                        this.webViewClient = WebViewClient()
 
                     }
                 }, update = {
@@ -256,6 +256,44 @@ fun Remoto(model: MainViewModel){
                 }
             )
         }
+    }
+}
+@Composable
+fun AlertDialogTrial(showDialog: Boolean, setShowDialog: (Boolean) -> Unit) {
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                            setShowDialog(false)
+                        },
+            title = {
+                            Text(text = "Prueba")
+                        },
+            text = {
+                            Text("tienes una maquina de prueba ")
+                        },
+            confirmButton = {
+                            Button(
+
+                                onClick = {
+                                    setShowDialog(false)
+                                }) {
+                                Text("Aceptar")
+                            }
+                        },
+                        dismissButton = {
+                            Button(
+
+                                onClick = {
+                                    setShowDialog(false)
+                                }) {
+                                Text("Rechazar")
+                            }
+                        }
+                    )
+
+
+
+
     }
 }
 @Composable
