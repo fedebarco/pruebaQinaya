@@ -18,7 +18,7 @@ interface APIservice {
     fun userLogin(@Body requestBody: RequestBody):Call<userResponse>
 
     @POST ("v2/mobile/register")
-    suspend fun userRegister(@Body requestBody: RequestBody):Response<ResponseBody>
+    fun userRegister(@Body requestBody: RequestBody):Call<RegisterResponse>
 
     @POST ("v2/mobile/user_home")
     fun userComputers(@Body requestBody: RequestBody):Call<List<computeresponse>>

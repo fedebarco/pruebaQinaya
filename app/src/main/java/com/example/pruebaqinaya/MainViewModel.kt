@@ -4,11 +4,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonParser
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
@@ -130,31 +126,22 @@ class MainViewModel:ViewModel() {
         // Create RequestBody ( We're not using any converter, like GsonConverter, MoshiConverter e.t.c, that's why we use RequestBody )
         val requestBody = jsonObjectString.toRequestBody("application/json".toMediaTypeOrNull())
 
-        viewModelScope.launch {
-            // Do the POST request and get response
-            val response =
-                getRetrofit().create(APIservice::class.java).userRegister(requestBody = requestBody)
-
-            withContext(Dispatchers.Main.immediate) {
-                if (response.isSuccessful) {
-
-                    val gson = GsonBuilder().setPrettyPrinting().create()
-                    val prettyJson = gson.toJson(
-                        JsonParser.parseString(
-                            response.body()
-                                ?.string() // About this thread blocking annotation : https://github.com/square/retrofit/issues/3255
-                        )
-                    )
-                    toregister.postValue(prettyJson)
-
-                } else {
-                    toregister.postValue(response.code().toString())
-
+        getRetrofit().create(APIservice::class.java).userRegister(requestBody=requestBody)
+            .enqueue(object:Callback<RegisterResponse>{
+                override fun onResponse(
+                    call: Call<RegisterResponse>,
+                    response: Response<RegisterResponse>
+                ) {
+                    TODO("Not yet implemented")
                 }
 
-            }
+                override fun onFailure(call: Call<RegisterResponse>, t: Throwable) {
+                    TODO("Not yet implemented")
+                }
 
-        }
+
+            })
+
     }
 
     fun cimputerJSON(id: Long,navController: NavController) {

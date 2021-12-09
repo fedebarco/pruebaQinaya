@@ -70,4 +70,5 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp:4.9.0'
     // Gson (To convert raw JSON to pretty JSON)
     implementation 'com.google.code.gson:gson:2.8.8'
+    implementation "androidx.compose.material:material-icons-extended:$compose_version"
 }

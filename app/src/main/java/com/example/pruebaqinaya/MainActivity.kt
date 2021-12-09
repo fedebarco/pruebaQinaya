@@ -13,12 +13,17 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -68,28 +73,59 @@ fun Greeting(name: String) {
 fun LoginQinaya(model: MainViewModel,navController: NavController){
     var textUser by remember { mutableStateOf("") }
     var textPassword by remember { mutableStateOf("") }
+    val showPassword= remember { mutableStateOf(false) }
     val textResponse by model.toLogin.observeAsState()
+
     Column(modifier = Modifier
         .fillMaxWidth()
-        .padding(8.dp)) {
-        Column {
-            OutlinedTextField(value = textUser, onValueChange ={textUser=it},label = { Text(text = "Usuario:")} )
-            OutlinedTextField(value = textPassword, onValueChange ={textPassword=it},label = { Text(text = "Contraseña")} )
-            Button(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = { model.rawJSON(textUser,textPassword,navController) }
-            ) {
-                Text("Ingresa")
-            }
-            TextButton(onClick = { navController.navigate("register_qinaya") }) {
-                Text("registrate")
-            }
-            Text("$textResponse")
+        .padding(15.dp)) {
+        Column(verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+        ) {
+                OutlinedTextField(value = textUser, onValueChange ={textUser=it},label = { Text(text = "Usuario:")} )
+                OutlinedTextField(
+                    value = textPassword,
+                    onValueChange ={textPassword=it},
+                    label = { Text(text = "Contraseña")},
+                    trailingIcon = {
+                        if(showPassword.value){
+                            IconButton(onClick = { showPassword.value=false }) {
+                                Icon(imageVector =Icons.Filled.Visibility,contentDescription = null) }
+                        }else{
+                            IconButton(onClick = { showPassword.value=true }) {
+                                Icon(imageVector =Icons.Filled.VisibilityOff,contentDescription = null)
+                            }
+                        }
+                    },
+                    visualTransformation = if(showPassword.value){
+                            VisualTransformation.None
+                        }else{
+                            PasswordVisualTransformation()
+                        }
+
+
+                )
+                Button(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    onClick = { model.rawJSON(textUser,textPassword,navController) }
+                ) {
+                    Text("Ingresa")
+                }
+                TextButton(onClick = { navController.navigate("register_qinaya") }) {
+                    Text("registrate")
+                }
+                Text("$textResponse")
 
         }
 
 
     }
+
+
+
 
 }
 
@@ -252,7 +288,7 @@ fun Remoto(model: MainViewModel){
 
                     }
                 }, update = {
-                    it.loadUrl("${url}")
+                    it.loadUrl("$url")
                 }
             )
         }
