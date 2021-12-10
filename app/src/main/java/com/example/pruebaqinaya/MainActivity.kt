@@ -8,7 +8,9 @@ import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -21,6 +23,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -79,16 +82,21 @@ fun LoginQinaya(model: MainViewModel,navController: NavController){
     val textResponse by model.toLogin.observeAsState()
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
+    val checkedState=remember{ mutableStateOf(false)}
 
     Scaffold(
         scaffoldState = scaffoldState,
-        content = {Column(modifier = Modifier
-            .fillMaxWidth()
-            .padding(15.dp)) {
+        content = {
+            Box(modifier=Modifier.fillMaxSize()) {
+                Image(painter = painterResource(id = R.drawable.back), contentDescription ="" )
+
+            }
             Column(verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxSize()
                 .padding(8.dp)
+                .border(1.dp, Color.Black)
             ) {
+                Text(text = "Bienvenido.",fontSize = 30.sp)
                 OutlinedTextField(value = textUser, onValueChange ={textUser=it},label = { Text(text = "Usuario:")} )
                 OutlinedTextField(
                     value = textPassword,
@@ -112,6 +120,8 @@ fun LoginQinaya(model: MainViewModel,navController: NavController){
 
 
                 )
+
+                
                 Button(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -125,13 +135,17 @@ fun LoginQinaya(model: MainViewModel,navController: NavController){
                 ) {
                     Text("Ingresa")
                 }
+                Row {
+                    Checkbox(checked = checkedState.value , onCheckedChange ={checkedState.value=it} )
+                    Text(text = "Recuerdame")
+                }
                 TextButton(onClick = { navController.navigate("register_qinaya") }) {
                     Text("registrate")
                 }
                 Text("$textResponse")
             }
 
-        }
+        
         }
     )
 
