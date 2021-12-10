@@ -33,6 +33,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.pruebaqinaya.ui.theme.PruebaQinayaTheme
+import kotlinx.coroutines.launch
 
 
 class MainActivity : ComponentActivity() {
@@ -64,6 +65,7 @@ fun MainNavigation(model: MainViewModel){
     }
 
 
+
 @Composable
 fun Greeting(name: String) {
     Text(text = "Hello $name!")
@@ -75,14 +77,18 @@ fun LoginQinaya(model: MainViewModel,navController: NavController){
     var textPassword by remember { mutableStateOf("") }
     val showPassword= remember { mutableStateOf(false) }
     val textResponse by model.toLogin.observeAsState()
+    val scaffoldState = rememberScaffoldState()
+    val scope = rememberCoroutineScope()
 
-    Column(modifier = Modifier
-        .fillMaxWidth()
-        .padding(15.dp)) {
-        Column(verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
+    Scaffold(
+        scaffoldState = scaffoldState,
+        content = {Column(modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp)
-        ) {
+            .padding(15.dp)) {
+            Column(verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+            ) {
                 OutlinedTextField(value = textUser, onValueChange ={textUser=it},label = { Text(text = "Usuario:")} )
                 OutlinedTextField(
                     value = textPassword,
@@ -110,7 +116,12 @@ fun LoginQinaya(model: MainViewModel,navController: NavController){
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(8.dp),
-                    onClick = { model.rawJSON(textUser,textPassword,navController) }
+                    onClick = {
+                        model.rawJSON(textUser,textPassword,navController)
+                        scope.launch {
+                            scaffoldState.snackbarHostState.showSnackbar("Error: $textResponse")
+                        }
+                    }
                 ) {
                     Text("Ingresa")
                 }
@@ -118,11 +129,11 @@ fun LoginQinaya(model: MainViewModel,navController: NavController){
                     Text("registrate")
                 }
                 Text("$textResponse")
+            }
 
         }
-
-
-    }
+        }
+    )
 
 
 
@@ -140,10 +151,15 @@ fun RegisterScreen(model: MainViewModel){
     val textresponse by model.toregister.observeAsState()
     val textMoneda by model.moneda.observeAsState()
     val (showDialog, setShowDialog) =  remember { mutableStateOf(false) }
+    val (showDialog1, setShowDialog1) =  remember { mutableStateOf(false) }
     Column(modifier = Modifier
         .fillMaxWidth()
-        .padding(8.dp)) {
-        Column {
+        .padding(15.dp)) {
+        Column (verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+                ) {
+            Text(text = "Crea tu cuenta")
             OutlinedTextField(value = textname, onValueChange ={textname=it},label = { Text(text = "Nombre:")} )
             OutlinedTextField(value = textEmail, onValueChange ={textEmail=it},label = { Text(text = "Email")} )
             OutlinedTextField(value = textPassword, onValueChange ={textPassword=it},label = { Text(text = "contraseña:")} )
@@ -161,7 +177,7 @@ fun RegisterScreen(model: MainViewModel){
                 modifier = Modifier
                     .padding(8.dp)
                     .fillMaxWidth(),
-                onClick = {setShowDialog(true)}
+                onClick = {setShowDialog1(true)}
             ) {
                 Text("$textMoneda")
             }
@@ -179,7 +195,7 @@ fun RegisterScreen(model: MainViewModel){
             }
             Text("$textresponse")
 
-            DialogDemo(showDialog, setShowDialog,model)
+            DialogDemo(showDialog1, setShowDialog1,model)
             CountriesScreen(showDialog, setShowDialog,model)
         }
 
@@ -190,37 +206,20 @@ fun RegisterScreen(model: MainViewModel){
 
 @Composable
 fun DialogDemo(showDialog: Boolean, setShowDialog: (Boolean) -> Unit,model: MainViewModel) {
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = {
-                setShowDialog(false)
-            },
-            title = {
-                Text("Paises")
-            },
-            buttons ={
-                Column(
-                    modifier = Modifier.padding(all = 8.dp)
-                ) {
-                    Button(
-                        onClick = { setShowDialog(false)
-                            model.moneda.postValue("COP")}
-                    ) {
-                        Text("COP")
-                    }
-                    Button(
-                        onClick = {
-                            model.moneda.postValue("USD")
-                            setShowDialog(false) }
-                    ) {
-                        Text("USD")
+    DropdownMenu(expanded = showDialog, onDismissRequest = {setShowDialog(false)}) {
+        DropdownMenuItem(onClick = {
+            setShowDialog(false)
+            model.moneda.postValue("COP")
+        }) {
+            Text("COP")
+        }
+        DropdownMenuItem(onClick = {
+            setShowDialog(false)
+            model.moneda.postValue("USD")
+        }) {
+            Text("USD")
+        }
 
-                    }
-                }
-            }
-
-
-        )
     }
 }
 
@@ -230,7 +229,7 @@ fun DialogDemo(showDialog: Boolean, setShowDialog: (Boolean) -> Unit,model: Main
 fun MainPage(navController: NavController,model: MainViewModel) {
     val computadoras=model.UserComputers.value!!
     val textresponse=model.toComputers.observeAsState()
-    val (showDialog, setShowDialog) =  remember { mutableStateOf(true) }
+    val (showDialog, setShowDialog) =  remember { mutableStateOf(model.trialinit.value!!) }
 
     Column(verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
         .fillMaxWidth()
@@ -242,7 +241,7 @@ fun MainPage(navController: NavController,model: MainViewModel) {
                 MyLinux(name = micompu.userMachine.nombreMaquina,link =micompu.userMachine.url,navController = navController,model = model)
             }
         }
-        AlertDialogTrial(showDialog, setShowDialog)
+        AlertDialogTrial(model,showDialog, setShowDialog)
     }
 
 
@@ -295,7 +294,7 @@ fun Remoto(model: MainViewModel){
     }
 }
 @Composable
-fun AlertDialogTrial(showDialog: Boolean, setShowDialog: (Boolean) -> Unit) {
+fun AlertDialogTrial(model: MainViewModel,showDialog: Boolean, setShowDialog: (Boolean) -> Unit) {
     if (showDialog) {
         AlertDialog(
             onDismissRequest = {
@@ -311,6 +310,7 @@ fun AlertDialogTrial(showDialog: Boolean, setShowDialog: (Boolean) -> Unit) {
                             Button(
 
                                 onClick = {
+                                    model.startTrialJson(id=model.userid.value!!)
                                     setShowDialog(false)
                                 }) {
                                 Text("Aceptar")
@@ -339,31 +339,12 @@ fun CountriesScreen(showDialog: Boolean, setShowDialog: (Boolean) -> Unit,model:
     for (i in countriesNames){
         countriesn.add(i.name)
     }
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = {
-                setShowDialog(false)
-            },
-            title = {
-                Text("Paises")
-            },
-            buttons ={
-                Column(verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)
-                    .background(MaterialTheme.colors.background)) {
-                    LazyColumn{
-                        items(countriesn){countryName->
-                            MyCountries(name = countryName )
-                        }
-                    }
-
-                }
-            }
-
-
-        )
+    DropdownMenu(expanded = showDialog, onDismissRequest = {setShowDialog(false)}) {
+        for (item in countriesn){
+            MyCountries(name = item )
+        }
     }
+
 }
 
 @Composable
@@ -378,8 +359,8 @@ fun MyLinux(name:String,link:String,navController:NavController,model: MainViewM
 
 @Composable
 fun MyCountries(name:String){
-    Button(onClick = { /*TODO*/ }) {
-        Text(text=name)
+    DropdownMenuItem(onClick = {  }) {
+        Text(text = name)
     }
 }
 

@@ -22,9 +22,10 @@ class MainViewModel:ViewModel() {
     val pais = MutableLiveData<String>("Colombia")
     val moneda = MutableLiveData<String>("COP")
     val toregister = MutableLiveData<String>("hola")
-    val userMain=MutableLiveData<userResponse>()
+    val userid=MutableLiveData<Long>(1)
     val UserComputers=MutableLiveData<List<computeresponse>>(listOf())
     val linkmaquina=MutableLiveData<String>()
+    val trialinit=MutableLiveData<Boolean>(false)
 
 
     private fun getRetrofit(): Retrofit {
@@ -36,21 +37,22 @@ class MainViewModel:ViewModel() {
 
     fun searchCountries() {
         viewModelScope.launch {
-            val call =
-                getRetrofit().create(APIservice::class.java).getcountries("v2/mobile/countries")
-                    .enqueue(object : Callback<List<countriesResponse>> {
-                        override fun onResponse(
-                            call: Call<List<countriesResponse>>,
-                            response: Response<List<countriesResponse>>
-                        ) {
-                            countries.postValue(response.body())
+            getRetrofit().create(APIservice::class.java).getcountries("v2/mobile/countries")
+                .enqueue(object : Callback<List<countriesResponse>> {
+                    override fun onResponse(
+                        call: Call<List<countriesResponse>>,
+                        response: Response<List<countriesResponse>>
+                    ) {
+                        if (response.isSuccessful){
+                                countries.postValue(response.body())
                         }
+                    }
 
-                        override fun onFailure(call: Call<List<countriesResponse>>, t: Throwable) {
-                        }
+                    override fun onFailure(call: Call<List<countriesResponse>>, t: Throwable) {
+                    }
 
 
-                    })
+                })
             //val countriesCall=call.body()
 
             //respuesta.postValue(countriesCall.toString())
@@ -132,11 +134,14 @@ class MainViewModel:ViewModel() {
                     call: Call<RegisterResponse>,
                     response: Response<RegisterResponse>
                 ) {
-                    TODO("Not yet implemented")
+                    if (response.isSuccessful){
+                        toregister.postValue("registro completo verifica tu correo ")
+                    }else{
+                        toregister.postValue(response.code().toString())
+                    }
                 }
 
                 override fun onFailure(call: Call<RegisterResponse>, t: Throwable) {
-                    TODO("Not yet implemented")
                 }
 
 
@@ -151,6 +156,7 @@ class MainViewModel:ViewModel() {
             // Create JSON using JSONObject
             val jsonObject = JSONObject()
             jsonObject.put("id", id)
+            userid.postValue(id)
 
 
             // Convert JSONObject to String
@@ -172,7 +178,7 @@ class MainViewModel:ViewModel() {
                         if (response.isSuccessful){
                             UserComputers.postValue(response.body())
                             toComputers.postValue(response.code().toString())
-                            toComputers.postValue("que pasa mijo")
+                            isTrialUsed(id)
                             navController.navigate("main_page")
                         }else{
                             toComputers.postValue("que pasa mijo")
@@ -185,6 +191,66 @@ class MainViewModel:ViewModel() {
                     }
                 })
         }
+    }
+
+    fun startTrialJson(id: Long){
+        // Create JSON using JSONObject
+        val jsonObject = JSONObject()
+        jsonObject.put("id", id)
+
+
+        // Convert JSONObject to String
+        val jsonObjectString = jsonObject.toString()
+
+        // Create RequestBody ( We're not using any converter, like GsonConverter, MoshiConverter e.t.c, that's why we use RequestBody )
+        val requestBody = jsonObjectString.toRequestBody("application/json".toMediaTypeOrNull())
+
+        getRetrofit().create(APIservice::class.java).userTrial(requestBody = requestBody)
+            .enqueue(object:Callback<trialresponse>{
+                override fun onResponse(
+                    call: Call<trialresponse>,
+                    response: Response<trialresponse>
+                ) {
+
+                }
+
+                override fun onFailure(call: Call<trialresponse>, t: Throwable) {
+
+                }
+
+            })
+    }
+
+    fun isTrialUsed(id: Long){
+        val jsonObject = JSONObject()
+        jsonObject.put("id", id)
+
+
+        // Convert JSONObject to String
+        val jsonObjectString = jsonObject.toString()
+
+        // Create RequestBody ( We're not using any converter, like GsonConverter, MoshiConverter e.t.c, that's why we use RequestBody )
+        val requestBody = jsonObjectString.toRequestBody("application/json".toMediaTypeOrNull())
+
+        getRetrofit().create(APIservice::class.java).userPrueba(requestBody = requestBody)
+            .enqueue(object:Callback<pruebaRsponse>{
+                override fun onResponse(
+                    call: Call<pruebaRsponse>,
+                    response: Response<pruebaRsponse>
+                ) {
+                    if (response.isSuccessful){
+                        if (response.body()!!.usedTrial=="True"){
+                            trialinit.postValue(false)
+                        }else{
+                            trialinit.postValue(true)
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<pruebaRsponse>, t: Throwable) {
+                }
+            })
+
     }
 }
 
