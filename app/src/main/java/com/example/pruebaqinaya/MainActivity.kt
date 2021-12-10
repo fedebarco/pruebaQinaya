@@ -341,7 +341,7 @@ fun CountriesScreen(showDialog: Boolean, setShowDialog: (Boolean) -> Unit,model:
     }
     DropdownMenu(expanded = showDialog, onDismissRequest = {setShowDialog(false)}) {
         for (item in countriesn){
-            MyCountries(name = item )
+            MyCountries(name = item,setShowDialog=setShowDialog,model=model )
         }
     }
 
@@ -358,9 +358,14 @@ fun MyLinux(name:String,link:String,navController:NavController,model: MainViewM
 }
 
 @Composable
-fun MyCountries(name:String){
-    DropdownMenuItem(onClick = {  }) {
+fun MyCountries(name:String,setShowDialog: (Boolean) -> Unit,model: MainViewModel){
+    DropdownMenuItem(
+        onClick = { model.pais.postValue(name)
+            setShowDialog(false)
+
+    }) {
         Text(text = name)
+
     }
 }
 
