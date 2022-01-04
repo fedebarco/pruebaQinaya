@@ -1,6 +1,9 @@
 package com.example.pruebaqinaya
 
 
+import android.content.Context
+import android.content.SharedPreferences
+import android.os.Build
 import android.os.Bundle
 import android.view.ViewGroup
 import android.webkit.WebView
@@ -8,6 +11,7 @@ import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,8 +20,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
@@ -40,28 +43,40 @@ import kotlinx.coroutines.launch
 
 
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.P)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val model: MainViewModel by viewModels()
+        val sharedPref = getSharedPreferences("my_prefs",Context.MODE_PRIVATE)
         model.searchCountries()
         setContent {
             PruebaQinayaTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(color = MaterialTheme.colors.background) {
-                    MainNavigation(model = model)
+                    MainNavigation(model = model,shared = sharedPref,start = checkLogin(sharedPref))
                 }
             }
         }
     }
+
+    private fun checkLogin(shared : SharedPreferences):String{
+        val beginA = if (shared.getString("active","") == "true"){
+            "main_page"
+        }else{
+            "login_qinaya"
+        }
+        return beginA
+    }
 }
 
+
 @Composable
-fun MainNavigation(model: MainViewModel){
+fun MainNavigation(model: MainViewModel,shared: SharedPreferences,start:String){
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = "login_qinaya") {
-        composable("login_qinaya") { LoginQinaya(model = model,navController = navController) }
+    NavHost(navController = navController, startDestination = start) {
+        composable("login_qinaya") { LoginQinaya(model = model,navController = navController,shared = shared) }
         composable("register_qinaya") { RegisterScreen(model = model) }
-        composable("main_page") { MainPage(navController = navController,model = model)}
+        composable("main_page") { MainPage(navController = navController,model = model,shared=shared)}
         composable("remoto") { Remoto(model=model)}
         }
 
@@ -75,7 +90,7 @@ fun Greeting(name: String) {
 }
 
 @Composable
-fun LoginQinaya(model: MainViewModel,navController: NavController){
+fun LoginQinaya(model: MainViewModel,navController: NavController,shared: SharedPreferences){
     var textUser by remember { mutableStateOf("") }
     var textPassword by remember { mutableStateOf("") }
     val showPassword= remember { mutableStateOf(false) }
@@ -94,14 +109,20 @@ fun LoginQinaya(model: MainViewModel,navController: NavController){
             Column(verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
                 .fillMaxSize()
                 .padding(8.dp)
+                .height(IntrinsicSize.Max)
                 .border(1.dp, Color.Black)
             ) {
                 Text(text = "Bienvenido.",fontSize = 30.sp)
-                OutlinedTextField(value = textUser, onValueChange ={textUser=it},label = { Text(text = "Usuario:")} )
+                OutlinedTextField(value = textUser, onValueChange ={textUser=it},label = { Text(text = "Usuario:")},modifier = Modifier
+                    .padding(horizontal = 50.dp, vertical = 8.dp)
+                    .fillMaxWidth() )
                 OutlinedTextField(
                     value = textPassword,
                     onValueChange ={textPassword=it},
                     label = { Text(text = "Contraseña")},
+                    modifier = Modifier
+                        .padding(horizontal = 50.dp, vertical = 8.dp)
+                        .fillMaxWidth(),
                     trailingIcon = {
                         if(showPassword.value){
                             IconButton(onClick = { showPassword.value=false }) {
@@ -124,10 +145,10 @@ fun LoginQinaya(model: MainViewModel,navController: NavController){
                 
                 Button(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
+                        .padding(horizontal = 50.dp, vertical = 8.dp)
+                        .fillMaxWidth(),
                     onClick = {
-                        model.rawJSON(textUser,textPassword,navController)
+                        model.rawJSON(textUser,textPassword,navController,shared)
                         scope.launch {
                             scaffoldState.snackbarHostState.showSnackbar("Error: $textResponse")
                         }
@@ -140,12 +161,10 @@ fun LoginQinaya(model: MainViewModel,navController: NavController){
                     Text(text = "Recuerdame")
                 }
                 TextButton(onClick = { navController.navigate("register_qinaya") }) {
-                    Text("registrate")
+                    Text("Registrate")
                 }
                 Text("$textResponse")
             }
-
-        
         }
     )
 
@@ -172,31 +191,48 @@ fun RegisterScreen(model: MainViewModel){
         Column (verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
+            .height(IntrinsicSize.Max)
                 ) {
-            Text(text = "Crea tu cuenta")
-            OutlinedTextField(value = textname, onValueChange ={textname=it},label = { Text(text = "Nombre:")} )
-            OutlinedTextField(value = textEmail, onValueChange ={textEmail=it},label = { Text(text = "Email")} )
-            OutlinedTextField(value = textPassword, onValueChange ={textPassword=it},label = { Text(text = "contraseña:")} )
-            OutlinedTextField(value = textPassword2, onValueChange ={textPassword2=it},label = { Text(text = "Confirmar contraseña")} )
-            OutlinedTextField(value = textPhone, onValueChange ={textPhone=it},label = { Text(text = "telefono")} )
-            Button(
+            Text(text = "Crea tu cuenta",fontSize = 30.sp)
+            OutlinedTextField(value = textname, onValueChange ={textname=it},label = { Text(text = "Nombre:")},modifier = Modifier
+                .padding(horizontal = 50.dp, vertical = 8.dp)
+                .fillMaxWidth()  )
+            OutlinedTextField(value = textEmail, onValueChange ={textEmail=it},label = { Text(text = "Email")},modifier = Modifier
+                .padding(horizontal = 50.dp, vertical = 8.dp)
+                .fillMaxWidth()  )
+            OutlinedTextField(value = textPassword, onValueChange ={textPassword=it},label = { Text(text = "contraseña:")},modifier = Modifier
+                .padding(horizontal = 50.dp, vertical = 8.dp)
+                .fillMaxWidth(),
+                visualTransformation = PasswordVisualTransformation()  )
+            OutlinedTextField(value = textPassword2, onValueChange ={textPassword2=it},label = { Text(text = "Confirmar contraseña")},modifier = Modifier
+                .padding(horizontal = 50.dp, vertical = 8.dp)
+                .fillMaxWidth(),
+                visualTransformation = PasswordVisualTransformation())
+            OutlinedTextField(value = textPhone, onValueChange ={textPhone=it},label = { Text(text = "telefono")},modifier = Modifier
+                .padding(horizontal = 50.dp, vertical = 8.dp)
+                .fillMaxWidth()  )
+            OutlinedButton(
                 modifier = Modifier
-                    .padding(8.dp)
+                    .padding(horizontal = 50.dp, vertical = 8.dp)
                     .fillMaxWidth(),
                 onClick = {setShowDialog(true)}
             ) {
                 Text("$textPais")
+                Icon(Icons.Filled.ExpandMore,contentDescription = "")
             }
-            Button(
+            OutlinedButton(
                 modifier = Modifier
-                    .padding(8.dp)
+                    .padding(horizontal = 50.dp, vertical = 8.dp)
                     .fillMaxWidth(),
                 onClick = {setShowDialog1(true)}
             ) {
                 Text("$textMoneda")
+                Icon(Icons.Filled.ExpandMore,contentDescription = "")
             }
             Button(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .padding(horizontal = 50.dp, vertical = 8.dp)
+                    .fillMaxWidth(),
                 onClick = {
                     if (textPassword==textPassword2){
                         model.registerJSON(textname,textEmail,1,textPhone,1,1,textPassword)
@@ -223,7 +259,7 @@ fun DialogDemo(showDialog: Boolean, setShowDialog: (Boolean) -> Unit,model: Main
     DropdownMenu(expanded = showDialog, onDismissRequest = {setShowDialog(false)}) {
         DropdownMenuItem(onClick = {
             setShowDialog(false)
-            model.moneda.postValue("COP")
+             model.moneda.postValue("COP")
         }) {
             Text("COP")
         }
@@ -240,37 +276,69 @@ fun DialogDemo(showDialog: Boolean, setShowDialog: (Boolean) -> Unit,model: Main
 
 
 @Composable
-fun MainPage(navController: NavController,model: MainViewModel) {
-    val computadoras=model.UserComputers.value!!
+fun MainPage(navController: NavController,model: MainViewModel,shared: SharedPreferences) {
+    //model.actualizaJson(shared.getString("id","")!!.toLong())
+    model.cimputerJSON(shared.getString("id","")!!.toLong())
+    val computadoras=model.UserComputers.observeAsState()
     val textresponse=model.toComputers.observeAsState()
     val (showDialog, setShowDialog) =  remember { mutableStateOf(model.trialinit.value!!) }
 
-    Column(verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
-        .fillMaxWidth()
-        .padding(8.dp)
-        .background(MaterialTheme.colors.background)) {
-        Text("$textresponse")
-        LazyColumn{
-            items(computadoras){micompu->
-                MyLinux(name = micompu.userMachine.nombreMaquina,link =micompu.userMachine.url,navController = navController,model = model)
+    Scaffold(
+        topBar = {
+                 TopAppBar (
+                     title = { Text("Qinaya") },
+                     actions = {
+                         // RowScope here, so these icons will be placed horizontally
+                         IconButton(onClick = {
+                             with(shared.edit()){
+                                 putString("active", "false")
+                                 commit() }
+                             navController.navigate("login_qinaya")
+
+                         }) {
+                             Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
+                         }
+                     }
+                         )
+
+        },
+        content = {
+            Column(verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .background(MaterialTheme.colors.background)) {
+                Text("$textresponse")
+                computadoras.value?.let{
+                    LazyColumn{
+                        items(it){micompu->
+                            MyLinux(name = micompu.userMachine.nombreMaquina,link =micompu.userMachine.url,navController = navController,model = model)
+                        }
+                    }
+                }
+                AlertDialogTrial(model,showDialog, setShowDialog)
             }
+
+
         }
-        AlertDialogTrial(model,showDialog, setShowDialog)
-    }
-
-
+    )
 }
 
 @Composable
 fun Remoto(model: MainViewModel){
 
     val url=model.linkmaquina.value
+    val textresponse by model.linkmaquina.observeAsState()
+
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         modifier = Modifier.fillMaxWidth()
     ) {
+        Button(onClick = { model.linkmaquina.postValue("parro")}) {
+            Text("que pasa")
+        }
+
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
@@ -280,11 +348,14 @@ fun Remoto(model: MainViewModel){
                 .background(MaterialTheme.colors.primary)
         ) {
             Text(
-                text = "$url",
+                text = "$textresponse",
                 color = Color.White,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
             )
+            Button(onClick = { model.linkmaquina.postValue("parro")}) {
+                Text("que pasa")
+            }
         }
 
         Column {
@@ -302,11 +373,16 @@ fun Remoto(model: MainViewModel){
                     }
                 }, update = {
                     it.loadUrl("$url")
+
+
                 }
             )
         }
     }
 }
+
+
+
 @Composable
 fun AlertDialogTrial(model: MainViewModel,showDialog: Boolean, setShowDialog: (Boolean) -> Unit) {
     if (showDialog) {
@@ -363,11 +439,25 @@ fun CountriesScreen(showDialog: Boolean, setShowDialog: (Boolean) -> Unit,model:
 
 @Composable
 fun MyLinux(name:String,link:String,navController:NavController,model: MainViewModel){
-    Button(onClick = { navController.navigate("remoto")
-        model.linkmaquina.postValue(link)
+    Card (modifier = Modifier
+        .fillMaxWidth()
+        .padding(15.dp)
+        .height(IntrinsicSize.Max)
+        .border(1.dp, Color.Black)){
+        Column {
+            Text(text = name)
+            Button(onClick = {//aca para conectar
+                 }) {
+                Text(text = "RECARGA UN PLAN")
+            }
+            Button(onClick = {
+                navController.navigate("remoto")
+                model.linkmaquina.postValue(link)
+            }) {
+                Text(text = "CONECTAR")
+            }
+        }
 
-    }) {
-        Text(text=name)
     }
 }
 
