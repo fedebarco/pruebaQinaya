@@ -12,9 +12,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -53,17 +51,19 @@ class MainActivity : ComponentActivity() {
             PruebaQinayaTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(color = MaterialTheme.colors.background) {
-                    MainNavigation(model = model,shared = sharedPref,start = checkLogin(sharedPref))
+                    MainNavigation(model = model,shared = sharedPref,start = checkLogin(sharedPref,model = model))
                 }
             }
         }
     }
 
-    private fun checkLogin(shared : SharedPreferences):String{
-        val beginA = if (shared.getString("active","") == "true"){
-            "main_page"
+    private fun checkLogin(shared : SharedPreferences,model: MainViewModel):String{
+        var beginA=""
+        if (shared.getString("active","") == "true"){
+            beginA="main_page"
+            model.cimputerJSON(shared.getString("id","")!!.toLong())
         }else{
-            "login_qinaya"
+            beginA="login_qinaya"
         }
         return beginA
     }
@@ -180,6 +180,7 @@ fun RegisterScreen(model: MainViewModel){
     var textPhone by remember { mutableStateOf("") }
     var textPassword by remember { mutableStateOf("") }
     var textPassword2 by remember { mutableStateOf("") }
+    var scrollState= rememberScrollState()
     val textPais by model.pais.observeAsState()
     val textresponse by model.toregister.observeAsState()
     val textMoneda by model.moneda.observeAsState()
@@ -188,7 +189,7 @@ fun RegisterScreen(model: MainViewModel){
     Column(modifier = Modifier
         .fillMaxWidth()
         .padding(15.dp)) {
-        Column (verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
+        Column (verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier.verticalScroll(scrollState)
             .fillMaxWidth()
             .padding(8.dp)
             .height(IntrinsicSize.Max)

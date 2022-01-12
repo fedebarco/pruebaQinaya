@@ -13,7 +13,6 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 
 class MainViewModel:ViewModel() {
     val value = MutableLiveData<String>()
@@ -29,38 +28,14 @@ class MainViewModel:ViewModel() {
     val trialinit=MutableLiveData<Boolean>(false)
 
 
-    private fun getRetrofit(): Retrofit {
-        return Retrofit.Builder()
-            .baseUrl("https://nacc.qinaya.co/api/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-    }
 
     fun searchCountries() {
         viewModelScope.launch {
-            getRetrofit().create(APIservice::class.java).getcountries("v2/mobile/countries")
-                .enqueue(object : Callback<List<countriesResponse>> {
-                    override fun onResponse(
-                        call: Call<List<countriesResponse>>,
-                        response: Response<List<countriesResponse>>
-                    ) {
-                        if (response.isSuccessful){
-                                countries.postValue(response.body())
-                        }
-                    }
-
-                    override fun onFailure(call: Call<List<countriesResponse>>, t: Throwable) {
-                    }
-
-
-                })
-            //val countriesCall=call.body()
-
-            //respuesta.postValue(countriesCall.toString())
-            //val names=countriesCall?.id ?: emptyList()
-            //countries.postValue(names)
-
-
+            try {
+                val countriesResult = qinayaApi.retrofitService.getcountries("v2/mobile/countries")
+                countries.postValue(countriesResult)
+            } catch (e: Exception) {
+            }
         }
 
 
@@ -68,51 +43,37 @@ class MainViewModel:ViewModel() {
 
     fun rawJSON(user: String, password: String,navController: NavController,shared: SharedPreferences) {
 
-        // Save the user
+        viewModelScope.launch {
+            // Save the user
 
-        // Create JSON using JSONObjec
-        val jsonObject = JSONObject()
-        jsonObject.put("email", user)
-        jsonObject.put("password", password)
+            // Create JSON using JSONObjec
+            val jsonObject = JSONObject()
+            jsonObject.put("email", user)
+            jsonObject.put("password", password)
 
-        // Convert JSONObject to String
-        val jsonObjectString = jsonObject.toString()
+            // Convert JSONObject to String
+            val jsonObjectString = jsonObject.toString()
 
-        // Create RequestBody ( We're not using any converter, like GsonConverter, MoshiConverter e.t.c, that's why we use RequestBody )
-        val requestBody = jsonObjectString.toRequestBody("application/json".toMediaTypeOrNull())
+            // Create RequestBody ( We're not using any converter, like GsonConverter, MoshiConverter e.t.c, that's why we use RequestBody )
+            val requestBody = jsonObjectString.toRequestBody("application/json".toMediaTypeOrNull())
 
+            try {
+                val userResult = qinayaApi.retrofitService.userLogin(requestBody = requestBody)
+                toComputers.postValue(userResult.user.id.toString())
+                navController.navigate("main_page")
+                cimputerJSON(userResult.user.id)
+                with(shared.edit()) {
+                    putString("email", user)
+                    putString("password", password)
+                    putString("id", userResult.user.id.toString())
+                    putString("active", "true")
 
-        getRetrofit().create(APIservice::class.java).userLogin(requestBody = requestBody).enqueue(object:Callback<userResponse>{
-            override fun onResponse(call: Call<userResponse>, response: Response<userResponse>) {
-                if (response.isSuccessful){
-                    toComputers.postValue(response.body()!!.user.id.toString())
-                    navController.navigate("main_page")
-                    cimputerJSON(response.body()!!.user.id)
-                    with(shared.edit()){
-                        putString("email",user)
-                        putString("password",password)
-                        putString("id",response.body()!!.user.id.toString())
-                        putString("active","true")
-
-                        commit()
-                    }
-                    //cimputerJSON(response.body()!!.user.id,navController)
-
-                   // navController.navigate("main_page")
+                    commit()
                 }
-                else{
-                    toLogin.postValue(response.code().toString())
-                    toLogin.postValue(user)
-                }
-
+            }catch (e: Exception) {
+                toLogin.postValue(e.toString())
             }
-
-            override fun onFailure(call: Call<userResponse>, t: Throwable) {
-                toLogin.postValue(user)
-            }
-
-        })
-        toLogin.postValue("r5rr0r")
+        }
 
 
     }
@@ -127,48 +88,38 @@ class MainViewModel:ViewModel() {
         password: String
     ) {
 
-        // Create JSON using JSONObject
-        val jsonObject = JSONObject()
-        jsonObject.put("name", name)
-        jsonObject.put("email", user)
-        jsonObject.put("country", country)
-        jsonObject.put("phone", phone)
-        jsonObject.put("subscription", sub)
-        jsonObject.put("currency", curency)
-        jsonObject.put("password", password)
+        viewModelScope.launch {
+
+            // Create JSON using JSONObject
+            val jsonObject = JSONObject()
+            jsonObject.put("name", name)
+            jsonObject.put("email", user)
+            jsonObject.put("country", country)
+            jsonObject.put("phone", phone)
+            jsonObject.put("subscription", sub)
+            jsonObject.put("currency", curency)
+            jsonObject.put("password", password)
 
 
-        // Convert JSONObject to String
-        val jsonObjectString = jsonObject.toString()
+            // Convert JSONObject to String
+            val jsonObjectString = jsonObject.toString()
 
-        // Create RequestBody ( We're not using any converter, like GsonConverter, MoshiConverter e.t.c, that's why we use RequestBody )
-        val requestBody = jsonObjectString.toRequestBody("application/json".toMediaTypeOrNull())
+            // Create RequestBody ( We're not using any converter, like GsonConverter, MoshiConverter e.t.c, that's why we use RequestBody )
+            val requestBody = jsonObjectString.toRequestBody("application/json".toMediaTypeOrNull())
 
-        getRetrofit().create(APIservice::class.java).userRegister(requestBody=requestBody)
-            .enqueue(object:Callback<RegisterResponse>{
-                override fun onResponse(
-                    call: Call<RegisterResponse>,
-                    response: Response<RegisterResponse>
-                ) {
-                    if (response.isSuccessful){
-                        toregister.postValue("registro completo verifica tu correo ")
-                    }else{
-                        toregister.postValue(response.code().toString())
-                    }
-                }
-
-                override fun onFailure(call: Call<RegisterResponse>, t: Throwable) {
-                }
-
-
-            })
+            try {
+                val registerResult = qinayaApi.retrofitService.userRegister(requestBody = requestBody)
+                toregister.postValue("registro completo verifica tu correo ")
+            } catch (e: Exception) {
+                toregister.postValue(e.toString())
+            }
+        }
 
     }
 
     fun cimputerJSON(id: Long) {
+
         viewModelScope.launch {
-
-
             // Create JSON using JSONObject
             val jsonObject = JSONObject()
             jsonObject.put("id", id)
@@ -182,77 +133,23 @@ class MainViewModel:ViewModel() {
             val requestBody = jsonObjectString.toRequestBody("application/json".toMediaTypeOrNull())
 
 
-
             // Do the POST request and get response
+            try {
+                val computerResult =
+                    qinayaApi.retrofitService.userComputers(requestBody = requestBody)
+                toLogin.postValue("1 error")
+                UserComputers.postValue(computerResult)
+                toComputers.postValue("1 error")
+                isTrialUsed(id)
 
-            getRetrofit().create(APIservice::class.java).userComputers(requestBody = requestBody)
-                .enqueue(object:Callback<List<computeresponse>> {
-                    override fun onResponse(
-                        call: Call<List<computeresponse>>,
-                        response: Response<List<computeresponse>>
-                    ) {
-                        if (response.isSuccessful){
-                            toLogin.postValue("1 error")
-                            UserComputers.postValue(response.body())
-                            toComputers.postValue(response.code().toString())
-                            isTrialUsed(id)
-
-                        }else{
-                            toComputers.postValue("que pasa mijo")
-                            toLogin.postValue("que pasa mijo")
-                        }
-                    }
-
-                    override fun onFailure(call: Call<List<computeresponse>>, t: Throwable) {
-                        toComputers.postValue("que pasa perro")
-                        isTrialUsed(id)
-
-                    }
-                })
+            } catch (e: Exception) {
+                toComputers.postValue(e.toString())
+                toLogin.postValue(e.toString())
+            }
         }
-    }
-
-    fun actualizaJson(id: Long){
-
-        val jsonObject = JSONObject()
-
-        jsonObject.put("id", id)
-        userid.postValue(id)
-        toComputers.postValue(id.toString())
-
-
-        // Convert JSONObject to String
-        val jsonObjectString = jsonObject.toString()
-
-        // Create RequestBody ( We're not using any converter, like GsonConverter, MoshiConverter e.t.c, that's why we use RequestBody )
-        val requestBody = jsonObjectString.toRequestBody("application/json".toMediaTypeOrNull())
-
-        getRetrofit().create(APIservice::class.java).userComputers(requestBody = requestBody)
-            .enqueue(object : Callback<List<computeresponse>> {
-                override fun onResponse(
-                    call: Call<List<computeresponse>>,
-                    response: Response<List<computeresponse>>
-                ) {
-                    toComputers.postValue("extrañisimo")
-                    if (response.isSuccessful) {
-                            toComputers.postValue("extrañisimo")
-                            //UserComputers.postValue(response.body())
-                            //toComputers.postValue(response.code().toString())
-                            //isTrialUsed(id)
-
-                    } else {
-                            toComputers.postValue("que pasa mijo")
-                    }
-                }
-
-                override fun onFailure(call: Call<List<computeresponse>>, t: Throwable) {
-                    toComputers.postValue("que pasa perro")
-                }
-            })
-
-
 
     }
+
 
     fun startTrialJson(id: Long){
         // Create JSON using JSONObject
@@ -266,51 +163,31 @@ class MainViewModel:ViewModel() {
         // Create RequestBody ( We're not using any converter, like GsonConverter, MoshiConverter e.t.c, that's why we use RequestBody )
         val requestBody = jsonObjectString.toRequestBody("application/json".toMediaTypeOrNull())
 
-        getRetrofit().create(APIservice::class.java).userTrial(requestBody = requestBody)
-            .enqueue(object:Callback<trialresponse>{
-                override fun onResponse(
-                    call: Call<trialresponse>,
-                    response: Response<trialresponse>
-                ) {
-
-                }
-
-                override fun onFailure(call: Call<trialresponse>, t: Throwable) {
-
-                }
-
-            })
     }
 
     fun isTrialUsed(id: Long){
-        val jsonObject = JSONObject()
-        jsonObject.put("id", id)
+        viewModelScope.launch {
+            val jsonObject = JSONObject()
+            jsonObject.put("id", id)
 
 
-        // Convert JSONObject to String
-        val jsonObjectString = jsonObject.toString()
+            // Convert JSONObject to String
+            val jsonObjectString = jsonObject.toString()
 
-        // Create RequestBody ( We're not using any converter, like GsonConverter, MoshiConverter e.t.c, that's why we use RequestBody )
-        val requestBody = jsonObjectString.toRequestBody("application/json".toMediaTypeOrNull())
+            // Create RequestBody ( We're not using any converter, like GsonConverter, MoshiConverter e.t.c, that's why we use RequestBody )
+            val requestBody = jsonObjectString.toRequestBody("application/json".toMediaTypeOrNull())
 
-        getRetrofit().create(APIservice::class.java).userPrueba(requestBody = requestBody)
-            .enqueue(object:Callback<pruebaRsponse>{
-                override fun onResponse(
-                    call: Call<pruebaRsponse>,
-                    response: Response<pruebaRsponse>
-                ) {
-                    if (response.isSuccessful){
-                        if (response.body()!!.usedTrial=="True"){
-                            trialinit.postValue(false)
-                        }else{
-                            trialinit.postValue(true)
-                        }
-                    }
+            try {
+                val trialResult = qinayaApi.retrofitService.userPrueba(requestBody = requestBody)
+                if (trialResult.usedTrial == "True") {
+                    trialinit.postValue(false)
+                } else {
+                    trialinit.postValue(true)
                 }
-
-                override fun onFailure(call: Call<pruebaRsponse>, t: Throwable) {
-                }
-            })
+            } catch (e: Exception) {
+                toregister.postValue(e.toString())
+            }
+        }
 
     }
 }
