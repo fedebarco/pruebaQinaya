@@ -58,7 +58,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun checkLogin(shared : SharedPreferences,model: MainViewModel):String{
-        var beginA=""
+        val beginA: String
         if (shared.getString("active","") == "true"){
             beginA="main_page"
             model.cimputerJSON(shared.getString("id","")!!.toLong())
@@ -77,7 +77,7 @@ fun MainNavigation(model: MainViewModel,shared: SharedPreferences,start:String){
         composable("login_qinaya") { LoginQinaya(model = model,navController = navController,shared = shared) }
         composable("register_qinaya") { RegisterScreen(model = model) }
         composable("main_page") { MainPage(navController = navController,model = model,shared=shared)}
-        composable("remoto") { Remoto(model=model)}
+        composable("remoto") { Remoto(model=model,navController = navController)}
         }
 
     }
@@ -180,7 +180,7 @@ fun RegisterScreen(model: MainViewModel){
     var textPhone by remember { mutableStateOf("") }
     var textPassword by remember { mutableStateOf("") }
     var textPassword2 by remember { mutableStateOf("") }
-    var scrollState= rememberScrollState()
+    val scrollState= rememberScrollState()
     val textPais by model.pais.observeAsState()
     val textresponse by model.toregister.observeAsState()
     val textMoneda by model.moneda.observeAsState()
@@ -189,7 +189,8 @@ fun RegisterScreen(model: MainViewModel){
     Column(modifier = Modifier
         .fillMaxWidth()
         .padding(15.dp)) {
-        Column (verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier.verticalScroll(scrollState)
+        Column (verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
+            .verticalScroll(scrollState)
             .fillMaxWidth()
             .padding(8.dp)
             .height(IntrinsicSize.Max)
@@ -282,6 +283,7 @@ fun MainPage(navController: NavController,model: MainViewModel,shared: SharedPre
     model.cimputerJSON(shared.getString("id","")!!.toLong())
     val computadoras=model.UserComputers.observeAsState()
     val textresponse=model.toComputers.observeAsState()
+    val textresponse2=model.responsemaquina2.observeAsState()
     val (showDialog, setShowDialog) =  remember { mutableStateOf(model.trialinit.value!!) }
 
     Scaffold(
@@ -309,10 +311,11 @@ fun MainPage(navController: NavController,model: MainViewModel,shared: SharedPre
                 .padding(8.dp)
                 .background(MaterialTheme.colors.background)) {
                 Text("$textresponse")
+                Text("$textresponse2")
                 computadoras.value?.let{
                     LazyColumn{
                         items(it){micompu->
-                            MyLinux(name = micompu.userMachine.nombreMaquina,link =micompu.userMachine.url,navController = navController,model = model)
+                            MyLinux(name = micompu.nombreMaquina,link =micompu.url,navController = navController,model = model,id = shared.getString("id","")!!.toLong() )
                         }
                     }
                 }
@@ -325,10 +328,11 @@ fun MainPage(navController: NavController,model: MainViewModel,shared: SharedPre
 }
 
 @Composable
-fun Remoto(model: MainViewModel){
+fun Remoto(model: MainViewModel,navController: NavController){
 
     val url=model.linkmaquina.value
     val textresponse by model.linkmaquina.observeAsState()
+    val textresponse2 by model.responsemaquina.observeAsState()
 
 
     Column(
@@ -336,9 +340,6 @@ fun Remoto(model: MainViewModel){
         verticalArrangement = Arrangement.Center,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Button(onClick = { model.linkmaquina.postValue("parro")}) {
-            Text("que pasa")
-        }
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -349,14 +350,11 @@ fun Remoto(model: MainViewModel){
                 .background(MaterialTheme.colors.primary)
         ) {
             Text(
-                text = "$textresponse",
+                text = "$textresponse2",
                 color = Color.White,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
             )
-            Button(onClick = { model.linkmaquina.postValue("parro")}) {
-                Text("que pasa")
-            }
         }
 
         Column {
@@ -379,6 +377,11 @@ fun Remoto(model: MainViewModel){
                 }
             )
         }
+    }
+    FloatingActionButton(onClick = {
+        model.endJSON()
+        navController.navigate("main_page") }) {
+        Icon(Icons.Filled.ExitToApp, contentDescription = "Localized description")
     }
 }
 
@@ -439,7 +442,7 @@ fun CountriesScreen(showDialog: Boolean, setShowDialog: (Boolean) -> Unit,model:
 }
 
 @Composable
-fun MyLinux(name:String,link:String,navController:NavController,model: MainViewModel){
+fun MyLinux(name:String,link:String,navController:NavController,model: MainViewModel,id:Long){
     Card (modifier = Modifier
         .fillMaxWidth()
         .padding(15.dp)
@@ -447,15 +450,18 @@ fun MyLinux(name:String,link:String,navController:NavController,model: MainViewM
         .border(1.dp, Color.Black)){
         Column {
             Text(text = name)
-            Button(onClick = {//aca para conectar
-                 }) {
-                Text(text = "RECARGA UN PLAN")
-            }
-            Button(onClick = {
-                navController.navigate("remoto")
-                model.linkmaquina.postValue(link)
-            }) {
-                Text(text = "CONECTAR")
+            Row() {
+                Button(onClick = {//aca para conectar
+                }) {
+                    Text(text = "RECARGA UN PLAN")
+                }
+                Button(onClick = {
+                    navController.navigate("remoto")
+                    model.linkmaquina.postValue(link)
+                    model.startJSON(id)
+                }) {
+                    Text(text = "CONECTAR")
+                }
             }
         }
 

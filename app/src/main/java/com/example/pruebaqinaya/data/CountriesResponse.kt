@@ -1,4 +1,4 @@
-package com.example.pruebaqinaya
+package com.example.pruebaqinaya.data
 
 import com.google.gson.annotations.SerializedName
 

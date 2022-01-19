@@ -1,17 +1,13 @@
 package com.example.pruebaqinaya
 
+import com.example.pruebaqinaya.data.*
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.RequestBody
-import okhttp3.ResponseBody
 import retrofit2.Call
-import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
-import retrofit2.http.Body
-import retrofit2.http.GET
-import retrofit2.http.POST
-import retrofit2.http.Url
+import retrofit2.http.*
 
 private const val BASE_URL = "https://qinaya.co/api/"
 
@@ -28,12 +24,14 @@ interface APIservice {
     @GET
     suspend fun getcountries(@Url url:String): List<countriesResponse>
 
+    @POST("v2/mobile/default")
+    suspend fun getDefault(@Body requestBody: RequestBody): DefaultResponse
 
     @POST ("v2/mobile/login")
     suspend fun userLogin(@Body requestBody: RequestBody):userResponse
 
     @POST ("v2/mobile/register")
-    suspend fun userRegister(@Body requestBody: RequestBody):RegisterResponse
+    suspend fun userRegister(@Body requestBody: RequestBody): RegisterResponse
 
     @POST ("v2/mobile/user_home")
     suspend fun userComputers(@Body requestBody: RequestBody):List<computeresponse>
@@ -42,8 +40,16 @@ interface APIservice {
     fun userTrial(@Body requestBody: RequestBody):Call<trialresponse>
 
     @POST ("v2/mobile/start_trial")
-    suspend fun userPrueba(@Body requestBody: RequestBody):pruebaRsponse
+    suspend fun userPrueba(@Body requestBody: RequestBody): pruebaRsponse
 
+    @POST ("v2/mobile/start_session")
+    suspend fun startMachine(@Body requestBody: RequestBody)
+
+    @POST ("v2/mobile/end_session")
+    suspend fun endMachine(@Body requestBody: RequestBody)
+
+    @POST ("v2/mobile/start_session")
+    suspend fun errorMachine(@Body requestBody: RequestBody):ErrorResponse
 }
 
 object qinayaApi {
