@@ -29,6 +29,7 @@ class MainViewModel:ViewModel() {
     val userdefault=MutableLiveData<DefaultResponse>()
     val responsemaquina=MutableLiveData<String>()
     val responsemaquina2=MutableLiveData<String>("aun no ha empezado")
+    var misession=""
 
 
     fun searchCountries() {
@@ -128,6 +129,7 @@ class MainViewModel:ViewModel() {
                 jsonObject.put("user_id", id)
                 jsonObject.put("compu_id", userdefault.value!!.userMachine.id.toString())
                 jsonObject.put("session", userdefault.value!!.session)
+                misession=userdefault.value!!.session
 
 
                 // Convert JSONObject to String
@@ -152,13 +154,13 @@ class MainViewModel:ViewModel() {
     }
 
 
-    fun endJSON() {
+    fun endJSON(navController: NavController) {
 
         viewModelScope.launch() {
 
             // Create JSON using JSONObject
             val jsonObject = JSONObject()
-            jsonObject.put("compu_session", userdefault.value!!.session)
+            jsonObject.put("compu_session", misession)
 
 
             // Convert JSONObject to String
@@ -172,11 +174,12 @@ class MainViewModel:ViewModel() {
             // Do the POST request and get response
             try {
                 qinayaApi.retrofitService.endMachine(requestBody = requestBody)
-                responsemaquina2.postValue("empezo")
+                responsemaquina2.postValue("termino")
             } catch (e: Exception) {
-                responsemaquina2.postValue(e.toString())
+                responsemaquina2.postValue(e.toString()+userdefault.value!!.session)
 
             }
+            navController.navigate("main_page")
 
         }
 
