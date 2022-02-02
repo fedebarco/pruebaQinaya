@@ -1,15 +1,15 @@
-package com.example.pruebaqinaya
+package com.example.pruebaqinaya.data
 
-import com.google.gson.annotations.SerializedName
+import com.squareup.moshi.Json
 
-data class userResponse(
-    @SerializedName( "access_token")
+data class UserResponse(
+    @Json( name = "access_token")
     val accessToken: String?=null,
 
-    @SerializedName("token_type")
+    @Json(name = "token_type")
     val tokenType: String?=null,
 
-    @SerializedName( "have_trial")
+    @Json( name = "have_trial")
     val haveTrial: Boolean?=null,
 
     val user: User
@@ -20,54 +20,54 @@ data class User (
     val email: String,
     val phone: String,
 
-    @SerializedName("ad_username")
+    @Json(name = "ad_username")
     val adUsername: Any? = null,
 
-    @SerializedName("ad_password")
+    @Json(name = "ad_password")
     val adPassword: Any? = null,
 
-    @SerializedName( "country_id")
+    @Json( name = "country_id")
     val countryID: String?=null,
 
-    @SerializedName( "currency_id")
+    @Json( name = "currency_id")
     val currencyID: String?=null,
 
-    @SerializedName( "referrer_id")
+    @Json( name = "referrer_id")
     val referrerID: Any? = null,
 
-    @SerializedName( "current_team_id")
+    @Json( name = "current_team_id")
     val currentTeamID: Any? = null,
 
-    @SerializedName( "current_organization_id")
+    @Json( name = "current_organization_id")
     val currentOrganizationID: Any? = null,
 
-    @SerializedName( "email_subscription")
+    @Json( name="email_subscription")
     val emailSubscription: String?=null,
 
-    @SerializedName("email_verified_at")
+    @Json(name = "email_verified_at")
     val emailVerifiedAt: String?=null,
 
-    @SerializedName( "profile_photo_path")
+    @Json( name = "profile_photo_path")
     val profilePhotoPath: Any? = null,
 
-    @SerializedName("computer_counter")
+    @Json(name = "computer_counter")
     val computerCounter: String?=null,
 
-    @SerializedName( "start_trial")
+    @Json( name = "start_trial")
     val startTrial: String?=null,
 
     val oldUser: Any? = null,
 
-    @SerializedName( "created_at")
+    @Json( name = "created_at")
     val createdAt: String?=null,
 
-    @SerializedName( "updated_at")
+    @Json( name = "updated_at")
     val updatedAt: String?=null,
 
-    @SerializedName("referral_link")
+    @Json(name = "referral_link")
     val referralLink: String?=null,
 
-    @SerializedName( "profile_photo_url")
+    @Json( name = "profile_photo_url")
     val profilePhotoURL: String?=null
 )
 

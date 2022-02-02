@@ -1,9 +1,9 @@
 package com.example.pruebaqinaya.data
 
-import com.google.gson.annotations.SerializedName
+import com.squareup.moshi.Json
 
-data class countriesResponse(
-    @SerializedName ("id")var id:String,
-    @SerializedName ("name")var name:String
+data class CountriesResponse(
+    @Json(name = "id")var id:String,
+    @Json (name = "name")var name:String
 
 )

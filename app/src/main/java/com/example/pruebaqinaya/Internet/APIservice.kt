@@ -22,25 +22,25 @@ private val retrofit = Retrofit.Builder()
 
 interface APIservice {
     @GET
-    suspend fun getcountries(@Url url:String): List<countriesResponse>
+    suspend fun getcountries(@Url url:String): List<CountriesResponse>
 
     @POST("v2/mobile/default")
     suspend fun getDefault(@Body requestBody: RequestBody): DefaultResponse
 
     @POST ("v2/mobile/login")
-    suspend fun userLogin(@Body requestBody: RequestBody):userResponse
+    suspend fun userLogin(@Body login:Login):UserResponse
 
     @POST ("v2/mobile/register")
-    suspend fun userRegister(@Body requestBody: RequestBody): RegisterResponse
+    suspend fun userRegister(@Body registration: Registration): RegisterResponse
 
     @POST ("v2/mobile/user_home")
-    suspend fun userComputers(@Body requestBody: RequestBody):List<computeresponse>
+    suspend fun userComputers(@Body requestBody: RequestBody):List<ComputeResponse>
 
     @POST ("v2/mobile/start_trial")
-    fun userTrial(@Body requestBody: RequestBody):Call<trialresponse>
+    fun userTrial(@Body requestBody: RequestBody):Call<TrialResponse>
 
     @POST ("v2/mobile/start_trial")
-    suspend fun userPrueba(@Body requestBody: RequestBody): pruebaRsponse
+    suspend fun userPrueba(@Body requestBody: RequestBody): PruebaResponse
 
     @POST ("v2/mobile/start_session")
     suspend fun startMachine(@Body requestBody: RequestBody)
