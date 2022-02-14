@@ -22,8 +22,11 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.GridCells
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -32,11 +35,8 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,21 +46,17 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.pruebaqinaya.Internet.ConnectionLiveData
-import com.example.pruebaqinaya.data.CountriesResponse
-import com.example.pruebaqinaya.data.Login
-import com.example.pruebaqinaya.data.Registration
 import com.example.pruebaqinaya.data.UserMachine
 import com.example.pruebaqinaya.ui.theme.PruebaQinayaTheme
-import kotlinx.coroutines.launch
 import zendesk.core.AnonymousIdentity
 import zendesk.core.Zendesk
 import zendesk.support.Support
-import zendesk.support.guide.HelpCenterActivity
 
 
 class MainActivity : ComponentActivity() {
 
 
+    @ExperimentalMaterialApi
     @ExperimentalAnimationApi
     @RequiresApi(Build.VERSION_CODES.P)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -72,8 +68,8 @@ class MainActivity : ComponentActivity() {
         val cont2=this
         Zendesk.INSTANCE.init(context, "https://qinayahelp.zendesk.com",
             "645a2e42147fccccc6355f8a0a7cf00b615c633a1e5653d1",
-            "mobile_sdk_client_bb1bdfd5957f4fda611a");
-        Support.INSTANCE.init(Zendesk.INSTANCE);
+            "mobile_sdk_client_bb1bdfd5957f4fda611a")
+        Support.INSTANCE.init(Zendesk.INSTANCE)
 
         val identity = AnonymousIdentity.Builder()
             .withNameIdentifier("name_user")
@@ -88,258 +84,91 @@ class MainActivity : ComponentActivity() {
                 val isNetworkAvailable=connectionLiveData.observeAsState(false).value
                 // A surface container using the 'background' color from the theme
                 Surface(color = MaterialTheme.colors.background) {
-                    MainNavigation(model = model,shared = sharedPref,start = checkLogin(sharedPref,model = model),context=context,conectar = isNetworkAvailable,c2=cont2)
+                    MainNavigation(model = model,shared = sharedPref,start = model.checkLogin(sharedPref),context=context,conectar = isNetworkAvailable,c2=cont2)
                 }
             }
         }
     }
-
-    private fun checkLogin(shared : SharedPreferences,model: MainViewModel):String{
-        val beginA = if (shared.getString("active","") == "true"){
-            "main_page"
-        }else{
-            "login_qinaya"
-        }
-        return beginA
-    }
 }
 
 
+@ExperimentalMaterialApi
 @ExperimentalAnimationApi
 @Composable
 fun MainNavigation(model: MainViewModel,shared: SharedPreferences,start:String,context: Context,conectar: Boolean,c2:Context){
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = start) {
         composable("login_qinaya") { LoginQinaya(model = model,navController = navController,shared = shared) }
-        composable("register_qinaya") { RegisterScreen(model = model) }
-        composable("main_page") { MainPage(navController = navController,model = model,shared=shared,context = context,conectar=conectar,context2 = c2)}
+        composable("register_qinaya") { RegisterScreen(model = model, navController = navController) }
+        composable("main_page") { MainPage(navController = navController,model = model,shared=shared,context = context,conectar=conectar)}
         composable("remoto") { Remoto(model=model,navController = navController)}
-        composable("store") { StoreQinaya(navController = navController) }
+        composable("store") { StoreQinaya(navController = navController, model = model) }
+        composable("item_store"){ ItemStore(navController = navController)}
+        composable ("recover_password"){ RecoverPassword(navController = navController)}
+        composable("change_password") { ChangePassword(navController = navController)}
+        composable("perfil_screen"){ SettingQinaya(navController = navController, shared = shared,context2 = c2) }
+        composable("share_screen"){ ShareScreen(navController=navController)}
         }
-
     }
+
 
 @Composable
-fun LoginQinaya(model: MainViewModel,navController: NavController,shared: SharedPreferences){
-    var textUser by remember { mutableStateOf("") }
-    var textPassword by remember { mutableStateOf("") }
-    val showPassword= remember { mutableStateOf(false) }
-    val (textResponse,setTextResponse)= remember { mutableStateOf("") }
-    val scaffoldState = rememberScaffoldState()
-    val scope = rememberCoroutineScope()
-    val checkedState=remember{ mutableStateOf(false)}
-    val backHandlingEnabled by remember { mutableStateOf(true) }
-    BackHandler(backHandlingEnabled) {
-        // Handle back press
-    }
-
-
-    Scaffold(
-        scaffoldState = scaffoldState,
-        content = {
-            Box(modifier=Modifier.fillMaxSize()) {
-                Image(painter = painterResource(id = R.drawable.back), contentDescription ="" )
-            }
-            Column(verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp)
-                .height(IntrinsicSize.Max)
-                .border(1.dp, Color.Black)
-            ) {
-                Text(text = "Bienvenido.",fontSize = 30.sp)
-                OutlinedTextField(value = textUser, onValueChange ={textUser=it},label = { Text(text = "Usuario:")},modifier = Modifier
-                    .padding(horizontal = 50.dp, vertical = 8.dp)
-                    .fillMaxWidth() )
-                OutlinedTextField(
-                    value = textPassword,
-                    onValueChange ={textPassword=it},
-                    label = { Text(text = "Contraseña")},
-                    modifier = Modifier
-                        .padding(horizontal = 50.dp, vertical = 8.dp)
-                        .fillMaxWidth(),
-                    trailingIcon = {
-                        if(showPassword.value){
-                            IconButton(onClick = { showPassword.value=false }) {
-                                Icon(imageVector =Icons.Filled.Visibility,contentDescription = null) }
-                        }else{
-                            IconButton(onClick = { showPassword.value=true }) {
-                                Icon(imageVector =Icons.Filled.VisibilityOff,contentDescription = null)
-                            }
-                        }
-                    },
-                    visualTransformation = if(showPassword.value){
-                            VisualTransformation.None
-                        }else{
-                            PasswordVisualTransformation()
-                        }
-                )
-                Button(
-                    modifier = Modifier
-                        .padding(horizontal = 50.dp, vertical = 8.dp)
-                        .fillMaxWidth(),
-                    onClick = {
-                        val login= Login(textUser,textPassword)
-                        model.rawJSON(login,navController,shared,setTextResponse)
-                    }
-                ) {
-                    Text("Ingresa")
-                }
-                Row {
-                    Checkbox(checked = checkedState.value , onCheckedChange ={checkedState.value=it} )
-                    Text(text = "Recuerdame")
-                }
-                TextButton(onClick = { navController.navigate("register_qinaya") }) {
-                    Text("Registrate")
-                }
-                textResponse.let {
-                    scope.launch {
-                        scaffoldState.snackbarHostState.showSnackbar("Error: $it")
-                    }
-                }
-
-            }
-        }
+fun LoadingPage(isDisplayed:Boolean){
+    val transition = rememberInfiniteTransition()
+    val image by transition.animateFloat(
+        0f,
+        1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(3000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        )
     )
-}
-
-@Composable
-fun RegisterScreen(model: MainViewModel){
-    var textname by remember { mutableStateOf("") }
-    var textEmail by remember { mutableStateOf("") }
-    var textPhone by remember { mutableStateOf("") }
-    var textPassword by remember { mutableStateOf("") }
-    var textPassword2 by remember { mutableStateOf("") }
-    var (countiQ,setCountiQ)= remember { mutableStateOf(listOf<CountriesResponse>()) }
-    val scrollState= rememberScrollState()
-    val textPais by model.pais.observeAsState()
-    val textresponse by model.toregister.observeAsState()
-    val textMoneda by model.moneda.observeAsState()
-    val (showDialog, setShowDialog) =  remember { mutableStateOf(false) }
-    val (showDialog1, setShowDialog1) =  remember { mutableStateOf(false) }
-    model.searchCountries(setCountiQ)
-    Column(modifier = Modifier
-        .fillMaxWidth()
-        .padding(15.dp)) {
-        Column (verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
-            .verticalScroll(scrollState)
+    var resourseI by remember {
+        mutableStateOf(R.drawable.azul1)
+    }
+    image.let {
+        if (0f<it && it<0.125f){resourseI=R.drawable.azul1
+        }else if(it<0.25){resourseI=R.drawable.azul2
+        }else if(it<0.375){resourseI=R.drawable.morado1
+        }else if(it<0.5){resourseI=R.drawable.morado2
+        }else if(it<0.625){resourseI=R.drawable.rosa1
+        }else if(it<0.75){resourseI=R.drawable.naranja1
+        }else if(it<0.875){resourseI=R.drawable.amarillo1
+        }else{resourseI=R.drawable.verde1
+        }
+    }
+    if (isDisplayed){
+        Row(modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp)
-            .height(IntrinsicSize.Max)
-                ) {
-            Text(text = "Crea tu cuenta",fontSize = 30.sp)
-            OutlinedTextField(value = textname, onValueChange ={textname=it},label = { Text(text = "Nombre:")},modifier = Modifier
-                .padding(horizontal = 50.dp, vertical = 8.dp)
-                .fillMaxWidth()  )
-            OutlinedTextField(value = textEmail, onValueChange ={textEmail=it},label = { Text(text = "Email")},modifier = Modifier
-                .padding(horizontal = 50.dp, vertical = 8.dp)
-                .fillMaxWidth()  )
-            OutlinedTextField(value = textPassword, onValueChange ={textPassword=it},label = { Text(text = "contraseña:")},modifier = Modifier
-                .padding(horizontal = 50.dp, vertical = 8.dp)
-                .fillMaxWidth(),
-                visualTransformation = PasswordVisualTransformation()  )
-            OutlinedTextField(value = textPassword2, onValueChange ={textPassword2=it},label = { Text(text = "Confirmar contraseña")},modifier = Modifier
-                .padding(horizontal = 50.dp, vertical = 8.dp)
-                .fillMaxWidth(),
-                visualTransformation = PasswordVisualTransformation())
-            OutlinedTextField(value = textPhone, onValueChange ={textPhone=it},label = { Text(text = "telefono")},modifier = Modifier
-                .padding(horizontal = 50.dp, vertical = 8.dp)
-                .fillMaxWidth()  )
-            OutlinedButton(
-                modifier = Modifier
-                    .padding(horizontal = 50.dp, vertical = 8.dp)
-                    .fillMaxWidth(),
-                onClick = {setShowDialog(true)}
-            ) {
-                Text("$textPais")
-                Icon(Icons.Filled.ExpandMore,contentDescription = "")
-            }
-            OutlinedButton(
-                modifier = Modifier
-                    .padding(horizontal = 50.dp, vertical = 8.dp)
-                    .fillMaxWidth(),
-                onClick = {setShowDialog1(true)}
-            ) {
-                Text("$textMoneda")
-                Icon(Icons.Filled.ExpandMore,contentDescription = "")
-            }
-            Button(
-                modifier = Modifier
-                    .padding(horizontal = 50.dp, vertical = 8.dp)
-                    .fillMaxWidth(),
-                onClick = {
-                    if (textPassword==textPassword2){
-                        var registration=Registration(textname,textEmail,1,textPhone,1,1,textPassword)
-                        model.registerJSON(registration = registration)
-                    }else{
-                        model.toregister.postValue("las contraseñas no coinciden")
-                    }
-                }
-            ) {
-                Text("Registrate")
-            }
-            Text("$textresponse")
+            .padding(20.dp),
+        horizontalArrangement = Arrangement.Center) {
+            Image(
+                painter = painterResource(id = resourseI),
+                contentDescription = ""
+            )
 
-            DialogDemo(showDialog1, setShowDialog1,model)
-            CountriesScreen(showDialog, setShowDialog,model,countiQ)
         }
+        
     }
 
-}
-
-@Composable
-fun DialogDemo(showDialog: Boolean, setShowDialog: (Boolean) -> Unit,model: MainViewModel) {
-    DropdownMenu(expanded = showDialog, onDismissRequest = {setShowDialog(false)}) {
-        DropdownMenuItem(onClick = {
-            setShowDialog(false)
-             model.moneda.postValue("COP")
-        }) {
-            Text("COP")
-        }
-        DropdownMenuItem(onClick = {
-            setShowDialog(false)
-            model.moneda.postValue("USD")
-        }) {
-            Text("USD")
-        }
-
-    }
 }
 
 
 @ExperimentalAnimationApi
 @Composable
-fun MainPage(navController: NavController,model: MainViewModel,shared: SharedPreferences,context: Context,conectar:Boolean,context2:Context) {
-    //model.actualizaJson(shared.getString("id","")!!.toLong())
-    val computadoras=model.UserComputers.observeAsState()
-    val (computers, setcomputers) =  remember { mutableStateOf(listOf<UserMachine>()) }
-    var textresponseP by remember { mutableStateOf("") }
-    val textresponse=model.toComputers.observeAsState()
-    val textresponse2=model.responsemaquina2.observeAsState()
-    val (showDialog, setShowDialog) =  remember { mutableStateOf(model.trialinit.value!!) }
+fun MainPage(navController: NavController,model: MainViewModel,shared: SharedPreferences,context: Context,conectar:Boolean) {
 
-    conectar.let{
-        if (it){
-            model.cimputerJSON(shared.getString("id","")!!.toLong(),setcomputers)
-            textresponseP="Bienvenido a Qinaya:"
-        }else{
-            setcomputers(listOf())
-            textresponseP="No hay internet"
-        }
-    }
+    val (showDialog, setShowDialog) =  remember { mutableStateOf(model.trialinit.value!!) }
+    val loading=model.loading.value
+    val scrollState= rememberScrollState()
+
     Scaffold(
         topBar = {
                  TopAppBar (
+                     backgroundColor = Color.Transparent,
                      title = { Image(painter = painterResource(id = R.drawable.icono_qinaya_adj), contentDescription ="" )},
                      actions = {
                          // RowScope here, so these icons will be placed horizontally
-                         IconButton(onClick = {
-                             HelpCenterActivity.builder()
-                             .show(context2)
-
-
-                         }) {
-                             Icon(Icons.Filled.Help, contentDescription = "Localized description")
-                         }
                          IconButton(onClick = {
                              val imeManager =
                                  context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
@@ -349,13 +178,9 @@ fun MainPage(navController: NavController,model: MainViewModel,shared: SharedPre
                              Icon(Icons.Filled.Keyboard, contentDescription = "Localized description")
                          }
                          IconButton(onClick = {
-                             with(shared.edit()){
-                                 putString("active", "false")
-                                 commit() }
-                             navController.navigate("login_qinaya")
-
+                             navController.navigate("perfil_screen")
                          }) {
-                             Icon(Icons.Filled.ExitToApp, contentDescription = "Localized description")
+                             Icon(Icons.Filled.Settings, contentDescription = "Localized description")
                          }
                      }
                          )
@@ -366,28 +191,118 @@ fun MainPage(navController: NavController,model: MainViewModel,shared: SharedPre
                 .fillMaxWidth()
                 .padding(8.dp)
                 .background(MaterialTheme.colors.background)) {
-                Button(modifier = Modifier.fillMaxWidth(),
+                /*Button(modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(backgroundColor =MaterialTheme.colors.primaryVariant),
                     onClick = {navController.navigate("store") }) {
-                    Text("TIENDA")
+                    Text("COMPRA UNA COMPU")
                     Icon(Icons.Filled.Store, contentDescription = "Localized description")
 
-                }
-                Text(textresponseP)
-                LazyColumn{
-                    items(computers){micompu->
-                        Mymachine(micompu = micompu,navController = navController,model = model,id = shared.getString("id","")!!.toLong() )
-                            //MyLinux(micompu = micompu,navController = navController,model = model,id = shared.getString("id","")!!.toLong() )
-                    }
+                }*/
+                Box(modifier = Modifier.fillMaxSize()){
+                    //ComputerScreen(
+                    ComputerGrid(
+                        navController = navController,
+                        model = model,
+                        shared = shared,
+                        conectar =conectar
+                    )
+                    LoadingPage(isDisplayed = loading)
+
                 }
 
-                //Text("$textresponse")
-                //Text("$textresponse2")
-                AlertDialogTrial(model,showDialog, setShowDialog)
             }
+
+            AlertDialogTrial(model,showDialog, setShowDialog)
+
 
 
         }
     )
+}
+
+@OptIn(ExperimentalAnimationApi::class,
+    androidx.compose.foundation.ExperimentalFoundationApi::class
+)
+@Composable
+fun ComputerGrid(navController: NavController,model: MainViewModel,shared: SharedPreferences,conectar:Boolean){
+    val (computers, setcomputers) =  remember { mutableStateOf(listOf<UserMachine>()) }
+    var textresponseP by remember { mutableStateOf("") }
+    conectar.let {
+        if(it){
+            if (computers.isEmpty()){
+                model.cimputerJSON(shared.getString("id","")!!.toLong(),setcomputers)
+                textresponseP="Bienvenido a Qinaya:"
+            }
+        }else{
+            setcomputers(listOf())
+            textresponseP="No hay internet"
+        }
+    }
+    Column(verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
+        .fillMaxWidth()
+        .padding(8.dp)
+        ) {
+
+            Card(shape = RoundedCornerShape(50.dp)) {
+                Column(
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colors.primaryVariant)
+                ) {
+                    Text(text = "Mis Compus", fontSize = 30.sp, color = Color.White)
+                    LazyVerticalGrid(cells = GridCells.Adaptive(500.dp)) {
+                        items(computers) { micompu ->
+                            Gridmachine(
+                                micompu = micompu,
+                                navController = navController,
+                                model = model,
+                                id = shared.getString("id", "")!!.toLong()
+                            ) //MyLinux(micompu = micompu,navController = navController,model = model,id = shared.getString("id","")!!.toLong() )
+                        }
+                        item { GridBuy(navController = navController, model =model )  }
+
+                    }
+                }
+            }
+
+        GiftCode(model = model)
+    }
+}
+
+@ExperimentalAnimationApi
+@Composable
+fun ComputerScreen(navController: NavController,model: MainViewModel,shared: SharedPreferences,conectar:Boolean){
+
+    val (computers, setcomputers) =  remember { mutableStateOf(listOf<UserMachine>()) }
+    var textresponseP by remember { mutableStateOf("") }
+    conectar.let {
+        if(it){
+            if (computers.isEmpty()){
+                model.cimputerJSON(shared.getString("id","")!!.toLong(),setcomputers)
+                textresponseP="Bienvenido a Qinaya:"
+            }
+        }else{
+            setcomputers(listOf())
+            textresponseP="No hay internet"
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
+        .fillMaxWidth()
+        .padding(8.dp)
+        .background(MaterialTheme.colors.background)) {
+        //Text(textresponseP)
+        LazyColumn{
+            items(computers){micompu->
+                Mymachine(micompu = micompu,navController = navController,model = model,id = shared.getString("id","")!!.toLong() )
+                //MyLinux(micompu = micompu,navController = navController,model = model,id = shared.getString("id","")!!.toLong() )
+            }
+
+
+        }
+        GiftCode(model = model)
+    }
 }
 
 @Composable
@@ -397,7 +312,7 @@ fun Remoto(model: MainViewModel,navController: NavController){
     val textresponse2 by model.responsemaquina.observeAsState()
     var clickI by remember { mutableStateOf(false) }
     var enterE by remember { mutableStateOf(false) }
-    var backHandlingEnabled by remember { mutableStateOf(true) }
+    val backHandlingEnabled by remember { mutableStateOf(true) }
     BackHandler(backHandlingEnabled) {
         // Handle back press
         clickI=true
@@ -532,7 +447,7 @@ fun AlertDialogTrial(model: MainViewModel,showDialog: Boolean, setShowDialog: (B
                                 Text("Aceptar")
                             }
                         },
-                        dismissButton = {
+            dismissButton = {
                             Button(
 
                                 onClick = {
@@ -540,91 +455,58 @@ fun AlertDialogTrial(model: MainViewModel,showDialog: Boolean, setShowDialog: (B
                                 }) {
                                 Text("Rechazar")
                             }
-                        }
-                    )
-    }
-}
-
-@Composable
-fun StoreQinaya(navController: NavController){
-    val infiniteTransition = rememberInfiniteTransition()
-    val image by infiniteTransition.animateFloat(
-       0f,
-        1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(4000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
+            }
         )
-    )
-    var resourseI by remember {
-        mutableStateOf(R.drawable.mate1)
     }
-    image.let {
-        if (image<0.5f){
-            resourseI=R.drawable.mate1
-        }
-        else{
-            resourseI=R.drawable.mate2
-        }
-    }
-    Scaffold(
-        topBar = {AppBarReturn(navController = navController)},
-        content = {
-            Column(modifier = Modifier
-                .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally) {
-                giftcode()
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(15.dp)
-                        .border(1.dp, Color.Black)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Image(
-                            contentScale = ContentScale.FillWidth,
-                            painter = painterResource(id = resourseI),
-                            contentDescription = ""
-                        )
-                        Row() {
-                            Image(
-                                modifier = Modifier.requiredSize(50.dp),
-                                painter = painterResource(id = R.drawable.logo_mate),
-                                contentDescription = ""
-                            )
-                            Column() {
-                                Text("Maquina Linux")
-                                Text("sistema operativo:Ubuntu mate")
-
-                            }
-
-                        }
-                    }
-                }
-            }
-
-        }
-    )
-
 }
 
 @Composable
-fun giftcode(){
+fun GiftCode(model: MainViewModel){
     var textCode by remember { mutableStateOf("") }
-    Column() {
-        Text(text = "Tienes un codigo para redimir")
-        Text("activa tu plan aqui")
-        Row(){
-            OutlinedTextField(value = textCode, onValueChange ={textCode=it},
-                label = { Text(text = "Usuario:")})
-            Button(onClick = { /*TODO*/ }) {
-                Text(text = "Redimir")
-            }
+    val (showDialog, setShowDialog) =  remember { mutableStateOf(false) }
+    val scrollState= rememberScrollState()
+    Card (modifier = Modifier
+        .fillMaxWidth()
+        .padding(15.dp)
+        , shape = RoundedCornerShape(50.dp)
 
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .verticalScroll(scrollState)
+                    .fillMaxWidth()
+                    .padding(8.dp)
+                    .height(IntrinsicSize.Max)
+
+        ) {
+            Text(fontSize = 20.sp,text = "Tienes un codigo para redimir")
+            Text("activa tu plan aqui")
+            OutlinedButton(
+                modifier = Modifier
+                    .padding(horizontal = 50.dp, vertical = 8.dp)
+                    .fillMaxWidth(),
+                onClick = { setShowDialog(true) }
+            ) {
+                Text("maquina actual")
+                Icon(Icons.Filled.ExpandMore, contentDescription = "")
+            }
+            CompusItemScreen(showDialog = showDialog, setShowDialog = setShowDialog, model = model)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(value = textCode,
+                    onValueChange = { textCode = it },
+                    label = { Text(text = "Tu codigo:") },
+                    modifier = Modifier
+                        .padding(horizontal = 50.dp, vertical = 8.dp)
+                        .weight(1f)
+                )
+                Button(onClick = { /*TODO*/ },
+                    modifier = Modifier
+                        .padding(horizontal = 50.dp, vertical = 8.dp)
+                ) {
+                    Text(text = "Redimir")
+                }
+
+            }
         }
     }
 
@@ -632,13 +514,14 @@ fun giftcode(){
 
 
 @Composable
-fun AppBarReturn(navController: NavController){
+fun AppBarReturn(navController: NavController,pageM:String){
     TopAppBar (
+        backgroundColor = Color.Transparent,
         title = { Image(painter = painterResource(id = R.drawable.icono_qinaya_adj), contentDescription ="" )},
         actions = {
             // RowScope here, so these icons will be placed horizontally
             IconButton(onClick = {
-                navController.navigate("main_page")
+                navController.navigate(pageM)
 
             }) {
                 Icon(Icons.Filled.House, contentDescription = "Localized description")
@@ -648,53 +531,39 @@ fun AppBarReturn(navController: NavController){
     )
 
 }
-@Composable
-fun CountriesScreen(showDialog: Boolean, setShowDialog: (Boolean) -> Unit,model: MainViewModel,counQ:List<CountriesResponse>) {
-    val countriesNames=counQ
-    val countriesn= mutableListOf<String>()
-    for (i in countriesNames){
-        countriesn.add(i.name)
-    }
-    DropdownMenu(expanded = showDialog, onDismissRequest = {setShowDialog(false)}) {
-        for (item in countriesn){
-            MyCountries(name = item,setShowDialog=setShowDialog,model=model )
-        }
-    }
-
-}
-
 @ExperimentalAnimationApi
 @Composable
-fun Mymachine(micompu:UserMachine,navController:NavController,model: MainViewModel,id:Long){
+fun Gridmachine(micompu:UserMachine,navController:NavController,model: MainViewModel,id:Long) {
     var expaned by remember{ mutableStateOf(false)}
     Card (modifier = Modifier
         .clickable { expaned = !expaned }
         .fillMaxWidth()
         .padding(15.dp)
-        .border(1.dp, Color.Black)){
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Row( verticalAlignment = Alignment.CenterVertically) {
-                Text(text = micompu.nombreMaquina)
-                Button(modifier = Modifier.padding(5.dp),
-
-                    onClick = {
+        , shape = RoundedCornerShape(50.dp)
+    ){
+        Column(modifier=Modifier.padding(15.dp),
+            horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(fontSize = 20.sp,text = micompu.nombreMaquina)
+            Text(text = micompu.tiempoDisponible)
+            Button(
+                modifier = Modifier.padding(5.dp),
+                onClick = {
                     navController.navigate("remoto")
                     model.linkmaquina.postValue(micompu.url)
                     model.startJSON(id)
                 }) {
-                    Text(text = "CONECTAR")
-                }
+                Text(text = siono(micompu.planActivo))
             }
             AnimatedVisibility(visible = (expaned)) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Row() {
+                    Row(modifier = Modifier.fillMaxWidth()) {
                         Column(
                             modifier = Modifier
-                                .fillMaxWidth(0.5f)
+                                .padding(15.dp)
+                                .weight(1f),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
 
 
@@ -716,23 +585,163 @@ fun Mymachine(micompu:UserMachine,navController:NavController,model: MainViewMod
                                 Icon(Icons.Filled.SettingsSystemDaydream, contentDescription = "")
                                 Column {
                                     Text("Sistema Operativo")
-                                    Text(micompu.plan)
+                                    Text(micompu.sistemaOperativo)
                                 }
                             }
                         }
                         Column(
                             modifier = Modifier
-                                .fillMaxWidth(0.5f)
+                                .padding(15.dp)
+                                .weight(1f),
+                            horizontalAlignment = Alignment.CenterHorizontally
+
                         ) {
-                            Column {
-                                Icon(Icons.Filled.WatchLater, contentDescription = "")
-                                Text("tiempo restante")
-                                Text("0:00")
-                            }
+                            Icon(Icons.Filled.WatchLater, contentDescription = "")
+                            Text("tiempo restante")
+                            Text(micompu.tiempoDisponible)
+
 
                         }
                     }
-                    Row() {
+                    Row(modifier = Modifier.padding(15.dp)) {
+                        Button(onClick = {//aca para conectar
+                        }) {
+                            Text(text = "RECARGA UN PLAN")
+                        }
+                    }
+                    /*Row() {
+                        Button(onClick = {//aca para conectar
+                        }) {
+                            Icon(
+                                Icons.Filled.ShoppingCart,
+                                contentDescription = "Localized description"
+                            )
+                            Text(text = "COMPRAR COMPU")
+                        }
+                        IconButton(onClick = {
+
+                        }) {
+                            Icon(
+                                Icons.Filled.CardGiftcard,
+                                contentDescription = "Localized description"
+                            )
+                        }
+                    }*/
+                }
+            }
+
+        }
+
+    }
+}
+
+fun siono(nn:Boolean):String{
+    return if (nn) {
+        "CONECTAR"
+    } else {
+        "Recarga compu"
+    }
+}
+@ExperimentalAnimationApi
+@Composable
+fun GridBuy(navController:NavController,model: MainViewModel) {
+    Card (modifier = Modifier
+        .clickable { navController.navigate("store")}
+        .fillMaxWidth()
+        .padding(15.dp)
+        , shape = RoundedCornerShape(50.dp)
+    ){
+        Column(modifier=Modifier.padding(15.dp),
+            horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(Icons.Filled.Add, contentDescription = "Localized description")
+            Text(fontSize = 20.sp,text = "Nueva Compu")
+            Text(text = "Compra una nueva compu")
+        }
+
+    }
+}
+
+
+@ExperimentalAnimationApi
+@Composable
+fun Mymachine(micompu:UserMachine,navController:NavController,model: MainViewModel,id:Long){
+    var expaned by remember{ mutableStateOf(false)}
+    Card (modifier = Modifier
+        .clickable { expaned = !expaned }
+        .fillMaxWidth()
+        .padding(15.dp)
+    , shape = RoundedCornerShape(50.dp)
+
+    ){
+        Column(modifier=Modifier.padding(15.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(modifier = Modifier
+                .fillMaxWidth()
+                .padding(15.dp)) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(fontSize = 20.sp,text = micompu.nombreMaquina)
+                    Text(text = micompu.tiempoDisponible)
+                }
+                Button(
+                    onClick = {
+                    navController.navigate("remoto")
+                    model.linkmaquina.postValue(micompu.url)
+                    model.startJSON(id)
+                }) {
+                    Text(text = "CONECTAR")
+                }
+            }
+            AnimatedVisibility(visible = (expaned)) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier
+                                .padding(15.dp)
+                                .weight(1f),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+
+
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Filled.CalendarToday, contentDescription = "")
+                                Column {
+                                    Text("Fecha de Inicio")
+                                    Text(micompu.startDate)
+                                }
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Filled.Schema, contentDescription = "")
+                                Column {
+                                    Text("Tipo de plan")
+                                    Text(micompu.plan)
+                                }
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Filled.SettingsSystemDaydream, contentDescription = "")
+                                Column {
+                                    Text("Sistema Operativo")
+                                    Text(micompu.sistemaOperativo)
+                                }
+                            }
+                        }
+                        Column(
+                            modifier = Modifier
+                                .padding(15.dp)
+                                .weight(1f),
+                            horizontalAlignment = Alignment.CenterHorizontally
+
+                        ) {
+                            Icon(Icons.Filled.WatchLater, contentDescription = "")
+                            Text("tiempo restante")
+                            Text(micompu.tiempoDisponible)
+
+
+                        }
+                    }
+                    Row(modifier = Modifier.padding(15.dp)) {
                         Button(onClick = {//aca para conectar
                         }) {
                             Text(text = "RECARGA UN PLAN")
@@ -762,6 +771,7 @@ fun Mymachine(micompu:UserMachine,navController:NavController,model: MainViewMod
 
     }
 }
+
 
 @Composable
 fun MyLinux(micompu:UserMachine,navController:NavController,model: MainViewModel,id:Long){
@@ -839,19 +849,6 @@ fun MyLinux(micompu:UserMachine,navController:NavController,model: MainViewModel
 
     }
 }
-
-@Composable
-fun MyCountries(name:String,setShowDialog: (Boolean) -> Unit,model: MainViewModel){
-    DropdownMenuItem(
-        onClick = { model.pais.postValue(name)
-            setShowDialog(false)
-
-    }) {
-        Text(text = name)
-
-    }
-}
-
 
 @Preview(showBackground = true)
 @Composable

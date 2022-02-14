@@ -1,11 +1,13 @@
 package com.example.pruebaqinaya
 
 import android.content.SharedPreferences
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.example.pruebaqinaya.data.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -13,12 +15,10 @@ import org.json.JSONObject
 
 
 class MainViewModel:ViewModel() {
+    val preferencesUser=MutableLiveData<SharedPreferences>()
     val value = MutableLiveData<String>()
     val countries = MutableLiveData<List<CountriesResponse>>(listOf())
-    val toComputers= MutableLiveData<String>("hola")
     val toLogin = MutableLiveData<String>("")
-    val pais = MutableLiveData<String>("Colombia")
-    val moneda = MutableLiveData<String>("COP")
     val toregister = MutableLiveData<String>("hola")
     val userid=MutableLiveData<Long>(56)
     val UserComputers=MutableLiveData<List<UserMachine>>(listOf())
@@ -26,8 +26,22 @@ class MainViewModel:ViewModel() {
     val trialinit=MutableLiveData<Boolean>(false)
     val userdefault=MutableLiveData<DefaultResponse>()
     val responsemaquina=MutableLiveData<String>()
-    val responsemaquina2=MutableLiveData<String>("aun no ha empezado")
     var misession=""
+    val loading= mutableStateOf(false)
+
+     fun checkLogin(shared : SharedPreferences):String{
+        loadPreferences(shared)
+        val beginA = if (shared.getString("active","") == "true"){
+            "main_page"
+        }else{
+            "login_qinaya"
+        }
+        return beginA
+    }
+
+    fun loadPreferences(shared : SharedPreferences){
+        preferencesUser.postValue(shared)
+    }
 
 
     fun searchCountries(countriesQ: (List<CountriesResponse>) -> Unit) {
@@ -47,10 +61,11 @@ class MainViewModel:ViewModel() {
 
         viewModelScope.launch {
             // Save the user
+            loading.value=true
+
 
             try {
                 val userResult = qinayaApi.retrofitService.userLogin(login = login)
-                toComputers.postValue(userResult.user.id.toString())
                 textRR("conectando")
                 navController.navigate("main_page")
                 with(shared.edit()) {
@@ -64,6 +79,7 @@ class MainViewModel:ViewModel() {
             }catch (e: Exception) {
                 textRR(e.toString())
             }
+            loading.value=false
         }
 
 
@@ -136,9 +152,7 @@ class MainViewModel:ViewModel() {
             // Do the POST request and get response
             try {
                 qinayaApi.retrofitService.endMachine(requestBody = requestBody)
-                responsemaquina2.postValue("termino")
             } catch (e: Exception) {
-                responsemaquina2.postValue(e.toString()+userdefault.value!!.session)
 
             }
             navController.navigate("main_page")
@@ -152,6 +166,7 @@ class MainViewModel:ViewModel() {
 
 
         viewModelScope.launch {
+            loading.value=true
             // Create JSON using JSONObject
             val jsonObject = JSONObject()
             jsonObject.put("id", id)
@@ -168,17 +183,17 @@ class MainViewModel:ViewModel() {
             // Do the POST request and get responsec
             try {
                 val defaultResult = qinayaApi.retrofitService.getDefault(requestBody = requestBody)
-                val computerResult= listOf(defaultResult.userMachine)
+                val buycompus=UserMachine(0,false,"Compu 2","o","o","compu ejemplo",false,"escoge",",","","",null)
+                val computerResult= listOf(defaultResult.userMachine,buycompus)
                 UserComputers.postValue(computerResult)
-                toComputers.postValue("Exito")
                 computers(computerResult)
                 userdefault.postValue(defaultResult)
                 isTrialUsed(id)
 
             } catch (e: Exception) {
-                toComputers.postValue(e.toString())
                 toLogin.postValue(e.toString())
             }
+            loading.value=false
         }
 
     }
