@@ -50,6 +50,15 @@ interface APIservice {
 
     @POST ("v2/mobile/start_session")
     suspend fun errorMachine(@Body requestBody: RequestBody):ErrorResponse
+
+    @FormUrlEncoded
+    @POST ("v2/mobile/forgot_password")
+    suspend fun recoverPasswordByUser(@Field("email")  email:String):TrialResponse
+
+    @POST ("v2/mobile/update_password")
+    suspend fun changePasswordByUser(@Body changePassword: PasswordChange):TrialResponse
+
+
 }
 
 object qinayaApi {

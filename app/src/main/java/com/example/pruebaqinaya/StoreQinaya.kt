@@ -90,24 +90,20 @@ fun ProductStore(navController: NavController){
 @Composable
 fun ItemStore(navController: NavController){
     val di=CompuPlan("Diario",R.drawable.globo,"2@ 2.4 GHz","4Gb","25Gb")
-    val se=CompuPlan("Mensual",R.drawable.globo,"2@ 2.4 GHz","4Gb","25Gb")
-    val me=CompuPlan("Anual",R.drawable.globo,"2@ 2.4 GHz","4Gb","25Gb")
+    val se=CompuPlan("Mensual",R.drawable.avion,"2@ 2.4 GHz","4Gb","25Gb")
+    val me=CompuPlan("Anual",R.drawable.cohete,"2@ 2.4 GHz","4Gb","25Gb")
 
 
 
-    Scaffold(
-        topBar = {AppBarReturn(navController = navController, pageM = "main_page")},
-        content = {
 
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier
                 .padding(20.dp)
-                .fillMaxWidth()) {
+                ) {
                 ItemPay(di)
                 ItemPay(se)
                 ItemPay(me)
             }
-        }
-    )
+
 }
 
 @Composable

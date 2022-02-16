@@ -18,16 +18,16 @@ class MainViewModel:ViewModel() {
     val preferencesUser=MutableLiveData<SharedPreferences>()
     val value = MutableLiveData<String>()
     val countries = MutableLiveData<List<CountriesResponse>>(listOf())
-    val toLogin = MutableLiveData<String>("")
-    val toregister = MutableLiveData<String>("hola")
     val userid=MutableLiveData<Long>(56)
     val UserComputers=MutableLiveData<List<UserMachine>>(listOf())
+    val UserCom1=MutableLiveData<UserMachine>()
     val linkmaquina=MutableLiveData<String>()
     val trialinit=MutableLiveData<Boolean>(false)
     val userdefault=MutableLiveData<DefaultResponse>()
     val responsemaquina=MutableLiveData<String>()
     var misession=""
     val loading= mutableStateOf(false)
+
 
      fun checkLogin(shared : SharedPreferences):String{
         loadPreferences(shared)
@@ -85,14 +85,14 @@ class MainViewModel:ViewModel() {
 
     }
 
-    fun registerJSON(registration: Registration) {
+    fun registerJSON(registration: Registration,textRR:(String)->Unit) {
 
         viewModelScope.launch {
             try {
                 qinayaApi.retrofitService.userRegister(registration=registration)
-                toregister.postValue("registro completo verifica tu correo ")
+                textRR("registro completo verifica tu correo ")
             } catch (e: Exception) {
-                toregister.postValue(e.toString())
+                textRR(e.toString())
             }
         }
 
@@ -191,11 +191,26 @@ class MainViewModel:ViewModel() {
                 isTrialUsed(id)
 
             } catch (e: Exception) {
-                toLogin.postValue(e.toString())
+
             }
             loading.value=false
         }
 
+    }
+
+    fun updatePassword(pOld:String,pNew:String,textRR:(String)->Unit){
+        viewModelScope.launch {
+            try {
+                val changeU=PasswordChange(preferencesUser.value!!.getString("id","")!!.toLong(),pOld,pNew)
+                val trialResult = qinayaApi.retrofitService.changePasswordByUser(changeU)
+                textRR("se cambio la clave")
+
+            }catch (e: Exception){
+                textRR(e.toString())
+
+            }
+
+        }
     }
 
 
@@ -210,6 +225,22 @@ class MainViewModel:ViewModel() {
 
         // Create RequestBody ( We're not using any converter, like GsonConverter, MoshiConverter e.t.c, that's why we use RequestBody )
         val requestBody = jsonObjectString.toRequestBody("application/json".toMediaTypeOrNull())
+
+    }
+
+
+    fun recoverPassword(email:String,textRR:(String)->Unit){
+        viewModelScope.launch {
+            try {
+                val trialResult = qinayaApi.retrofitService.recoverPasswordByUser(email =email)
+                textRR("se envio email de recuperacion")
+
+            }catch (e: Exception){
+                textRR(e.toString())
+
+            }
+
+        }
 
     }
 
@@ -233,7 +264,6 @@ class MainViewModel:ViewModel() {
                     trialinit.postValue(true)
                 }
             } catch (e: Exception) {
-                toregister.postValue(e.toString())
             }
         }
 

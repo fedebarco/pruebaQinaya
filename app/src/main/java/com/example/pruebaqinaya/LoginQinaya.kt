@@ -46,72 +46,94 @@ fun LoginQinaya(model: MainViewModel, navController: NavController, shared: Shar
     Scaffold(
         scaffoldState = scaffoldState,
         content = {
-            Box(modifier= Modifier.fillMaxSize()) {
-                Image(painter = painterResource(id = R.drawable.back), contentDescription ="" )
+            Box(modifier = Modifier.fillMaxSize()) {
+                Image(painter = painterResource(id = R.drawable.back), contentDescription = "")
             }
-            Column(verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp)
-                .height(IntrinsicSize.Max)
-                .border(1.dp, Color.Black)
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "Bienvenido.",fontSize = 30.sp)
-                OutlinedTextField(value = textUser, onValueChange ={textUser=it},label = { Text(text = "Usuario:") },modifier = Modifier
-                    .padding(horizontal = 50.dp, vertical = 8.dp)
-                    .fillMaxWidth() )
-                TextButton(onClick = { navController.navigate("recover_password") }) {
-                    Text("¿olvidaste tu contraseña?")
-                }
-                OutlinedTextField(
-                    value = textPassword,
-                    onValueChange ={textPassword=it},
-                    label = { Text(text = "Contraseña") },
+                Column(
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
-                        .padding(horizontal = 50.dp, vertical = 8.dp)
-                        .fillMaxWidth(),
-                    trailingIcon = {
-                        if(showPassword.value){
-                            IconButton(onClick = { showPassword.value=false }) {
-                                Icon(imageVector = Icons.Filled.Visibility,contentDescription = null) }
-                        }else{
-                            IconButton(onClick = { showPassword.value=true }) {
-                                Icon(imageVector = Icons.Filled.VisibilityOff,contentDescription = null)
-                            }
-                        }
-                    },
-                    visualTransformation = if(showPassword.value){
-                        VisualTransformation.None
-                    }else{
-                        PasswordVisualTransformation()
-                    }
-                )
-                Button(
-                    modifier = Modifier
-                        .padding(horizontal = 50.dp, vertical = 8.dp)
-                        .fillMaxWidth(),
-                    onClick = {
-                        val login= Login(textUser,textPassword)
-                        model.rawJSON(login,navController,shared,setTextResponse)
-                    }
+                        .width(500.dp)
+                        .padding(8.dp)
+                        .height(IntrinsicSize.Max)
+                        .border(1.dp, Color.Black)
                 ) {
-                    Text("Ingresa")
-                }
-                Row {
-                    Checkbox(checked = checkedState.value , onCheckedChange ={checkedState.value=it} )
-                    Text(text = "Recuerdame")
-                }
-                TextButton(onClick = { navController.navigate("register_qinaya") }) {
-                    Text("Registrate")
-                }
-                textResponse.let {
-                    if (it!=""){
-                        scope.launch {
-                            scaffoldState.snackbarHostState.showSnackbar("Error: $it")
-                        }
-
+                    Text(text = "Bienvenido.", fontSize = 30.sp)
+                    OutlinedTextField(value = textUser,
+                        onValueChange = { textUser = it },
+                        label = { Text(text = "Usuario:") },
+                        modifier = Modifier
+                            .padding(horizontal = 50.dp, vertical = 8.dp)
+                            .fillMaxWidth()
+                    )
+                    TextButton(onClick = { navController.navigate("recover_password") }) {
+                        Text("¿olvidaste tu contraseña?")
                     }
-                }
+                    OutlinedTextField(
+                        value = textPassword,
+                        onValueChange = { textPassword = it },
+                        label = { Text(text = "Contraseña") },
+                        modifier = Modifier
+                            .padding(horizontal = 50.dp, vertical = 8.dp)
+                            .fillMaxWidth(),
+                        trailingIcon = {
+                            if (showPassword.value) {
+                                IconButton(onClick = { showPassword.value = false }) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Visibility,
+                                        contentDescription = null
+                                    )
+                                }
+                            } else {
+                                IconButton(onClick = { showPassword.value = true }) {
+                                    Icon(
+                                        imageVector = Icons.Filled.VisibilityOff,
+                                        contentDescription = null
+                                    )
+                                }
+                            }
+                        },
+                        visualTransformation = if (showPassword.value) {
+                            VisualTransformation.None
+                        } else {
+                            PasswordVisualTransformation()
+                        }
+                    )
+                    Button(
+                        modifier = Modifier
+                            .padding(horizontal = 50.dp, vertical = 8.dp)
+                            .fillMaxWidth(),
+                        onClick = {
+                            val login = Login(textUser, textPassword)
+                            model.rawJSON(login, navController, shared, setTextResponse)
+                        }
+                    ) {
+                        Text("Ingresa")
+                    }
+                    Row {
+                        Checkbox(
+                            checked = checkedState.value,
+                            onCheckedChange = { checkedState.value = it })
+                        Text(text = "Recuerdame")
+                    }
+                    TextButton(onClick = { navController.navigate("register_qinaya") }) {
+                        Text("Registrate")
+                    }
+                    textResponse.let {
+                        if (it != "") {
+                            scope.launch {
+                                scaffoldState.snackbarHostState.showSnackbar("Error: $it")
+                            }
 
+                        }
+                    }
+
+                }
             }
         }
     )
@@ -127,7 +149,7 @@ fun RegisterScreen(model: MainViewModel,navController: NavController){
     val (countiQ,setCountiQ)= remember { mutableStateOf(listOf<CountriesResponse>()) }
     val scrollState= rememberScrollState()
     val (textPais,setTextPais)= remember { mutableStateOf("Colombia")}
-    val textresponse by model.toregister.observeAsState()
+    val (textresponse,setTextresponse)= remember {mutableStateOf("COP") } //by model.toregister.observeAsState()
     val (textMoneda,setTextMoneda )=remember { mutableStateOf("COP") }
     val (showDialog, setShowDialog) =  remember { mutableStateOf(false) }
     val (showDialog1, setShowDialog1) =  remember { mutableStateOf(false) }
@@ -136,6 +158,8 @@ fun RegisterScreen(model: MainViewModel,navController: NavController){
         topBar = {AppBarReturn(navController =navController , pageM ="login_qinaya")},
         content = {
             Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(15.dp)
@@ -145,7 +169,7 @@ fun RegisterScreen(model: MainViewModel,navController: NavController){
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .verticalScroll(scrollState)
-                        .fillMaxWidth()
+                        .width(500.dp)
                         .padding(8.dp)
                         .height(IntrinsicSize.Max)
                 ) {
@@ -220,15 +244,15 @@ fun RegisterScreen(model: MainViewModel,navController: NavController){
                                     1,
                                     textPassword
                                 )
-                                model.registerJSON(registration = registration)
+                                model.registerJSON(registration = registration, textRR = setTextresponse)
                             } else {
-                                model.toregister.postValue("las contraseñas no coinciden")
+                               setTextresponse("Las contraseñas no coinciden")
                             }
                         }
                     ) {
                         Text("Registrate")
                     }
-                    Text("$textresponse")
+                    Text(textresponse)
 
                     MonedaDemo(showDialog1, setShowDialog1, setTextMoneda)
                     CountriesScreen(showDialog, setShowDialog, countiQ,setTextPais)
@@ -272,7 +296,8 @@ fun CountriesScreen(showDialog: Boolean, setShowDialog: (Boolean) -> Unit,counQ:
 
 }
 @Composable
-fun RecoverPassword(navController: NavController){
+fun RecoverPassword(navController: NavController,model: MainViewModel){
+    val (text,setText )=remember { mutableStateOf("") }
     Scaffold(
         topBar = {AppBarReturn(navController =navController , pageM ="login_qinaya")},
         content = {
@@ -284,19 +309,19 @@ fun RecoverPassword(navController: NavController){
             ) {
                 Card(
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .width(500.dp)
                         .padding(15.dp)
                         .border(1.dp, Color.Black)
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("Recupera contraseña")
+                        Text("No hay problema. Escribe tu email y te enviaremos un link para cambiar tu contraseña")
                         OutlinedTextField(value = email, onValueChange = { setEmail(it) })
-                        Button(onClick = { }) {
+                        Button(onClick = { model.recoverPassword(email,setText)}) {
                             Text(text = "Enviar")
 
                         }
-
-
+                        Text(text = text)
                     }
                 }
             }

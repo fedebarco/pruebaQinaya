@@ -22,10 +22,7 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.GridCells
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyVerticalGrid
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -35,6 +32,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -104,8 +102,8 @@ fun MainNavigation(model: MainViewModel,shared: SharedPreferences,start:String,c
         composable("remoto") { Remoto(model=model,navController = navController)}
         composable("store") { StoreQinaya(navController = navController, model = model) }
         composable("item_store"){ ItemStore(navController = navController)}
-        composable ("recover_password"){ RecoverPassword(navController = navController)}
-        composable("change_password") { ChangePassword(navController = navController)}
+        composable ("recover_password"){ RecoverPassword(navController = navController,model=model)}
+        composable("change_password") { ChangePassword(navController = navController, model = model)}
         composable("perfil_screen"){ SettingQinaya(navController = navController, shared = shared,context2 = c2) }
         composable("share_screen"){ ShareScreen(navController=navController)}
         }
@@ -160,7 +158,25 @@ fun MainPage(navController: NavController,model: MainViewModel,shared: SharedPre
 
     val (showDialog, setShowDialog) =  remember { mutableStateOf(model.trialinit.value!!) }
     val loading=model.loading.value
-    val scrollState= rememberScrollState()
+    val micompu=model.UserCom1.observeAsState().value
+    val infiniteTransition = rememberInfiniteTransition()
+    val image by infiniteTransition.animateFloat(
+        0f,
+        1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(4000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+    var resourseI by remember { mutableStateOf(R.drawable.mate1) }
+    image.let {
+        if (image<0.5f){
+            resourseI=R.drawable.mate1
+        }
+        else{
+            resourseI=R.drawable.mate2
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -185,125 +201,267 @@ fun MainPage(navController: NavController,model: MainViewModel,shared: SharedPre
                      }
                          )
 
-        },
-        content = {
-            Column(verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
+        }
+    ) {
+        Column(
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
                 .fillMaxWidth()
                 .padding(8.dp)
-                .background(MaterialTheme.colors.background)) {
-                /*Button(modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(backgroundColor =MaterialTheme.colors.primaryVariant),
-                    onClick = {navController.navigate("store") }) {
-                    Text("COMPRA UNA COMPU")
-                    Icon(Icons.Filled.Store, contentDescription = "Localized description")
+                .background(MaterialTheme.colors.background)
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                LazyColumn() {
+                    item {
+                        Card(modifier = Modifier.height(300.dp)) {
+                            Column(
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                            ) {
 
-                }*/
-                Box(modifier = Modifier.fillMaxSize()){
-                    //ComputerScreen(
-                    ComputerGrid(
-                        navController = navController,
-                        model = model,
-                        shared = shared,
-                        conectar =conectar
-                    )
-                    LoadingPage(isDisplayed = loading)
+                                Row() {
+                                    micompu.let {
+                                        if (it != null) {
+                                            Inicio(
+                                                micompu = it,
+                                                navController = navController,
+                                                model = model
+                                            )
 
+                                            Card(
+                                                modifier = Modifier
+                                                    .width(600.dp)
+                                                    .padding(15.dp)
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier.width(500.dp),
+                                                    horizontalAlignment = Alignment.CenterHorizontally
+                                                ) {
+                                                    Image(
+                                                        modifier = Modifier.width(400.dp),
+                                                        contentScale = ContentScale.FillWidth,
+                                                        painter = painterResource(id = resourseI),
+                                                        contentDescription = ""
+                                                    )
+                                                }
+                                            }
+                                        } else {
+                                            ItemStore(navController = navController)
+
+                                            Card(
+                                                modifier = Modifier
+                                                    .width(600.dp)
+                                                    .padding(15.dp)
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier.width(500.dp),
+                                                    horizontalAlignment = Alignment.CenterHorizontally
+                                                ) {
+                                                    Image(
+                                                        modifier = Modifier.width(400.dp),
+                                                        contentScale = ContentScale.FillWidth,
+                                                        painter = painterResource(id = resourseI),
+                                                        contentDescription = ""
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                }
+                            }
+                        }
+                    }
+
+                    item {
+
+                        ComputerRow(
+                            navController = navController,
+                            model = model,
+                            shared = shared,
+                            conectar = conectar
+                        )
+                    }
+                    item { GiftCode(model = model) }
                 }
+                LoadingPage(isDisplayed = loading)
 
             }
 
-            AlertDialogTrial(model,showDialog, setShowDialog)
-
-
 
         }
-    )
+
+        AlertDialogTrial(model, showDialog, setShowDialog)
+
+
+    }
 }
 
-@OptIn(ExperimentalAnimationApi::class,
-    androidx.compose.foundation.ExperimentalFoundationApi::class
-)
 @Composable
-fun ComputerGrid(navController: NavController,model: MainViewModel,shared: SharedPreferences,conectar:Boolean){
-    val (computers, setcomputers) =  remember { mutableStateOf(listOf<UserMachine>()) }
-    var textresponseP by remember { mutableStateOf("") }
-    conectar.let {
-        if(it){
-            if (computers.isEmpty()){
-                model.cimputerJSON(shared.getString("id","")!!.toLong(),setcomputers)
-                textresponseP="Bienvenido a Qinaya:"
-            }
-        }else{
-            setcomputers(listOf())
-            textresponseP="No hay internet"
-        }
-    }
-    Column(verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
-        .fillMaxWidth()
-        .padding(8.dp)
+fun Inicio(micompu: UserMachine,navController: NavController,model: MainViewModel){
+    Card(modifier = Modifier.height(600.dp)) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
-            Card(shape = RoundedCornerShape(50.dp)) {
+            Row(modifier = Modifier.width(500.dp)) {
                 Column(
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colors.primaryVariant)
+                        .padding(15.dp)
+                        .weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(text = "Mis Compus", fontSize = 30.sp, color = Color.White)
-                    LazyVerticalGrid(cells = GridCells.Adaptive(500.dp)) {
-                        items(computers) { micompu ->
-                            Gridmachine(
-                                micompu = micompu,
-                                navController = navController,
-                                model = model,
-                                id = shared.getString("id", "")!!.toLong()
-                            ) //MyLinux(micompu = micompu,navController = navController,model = model,id = shared.getString("id","")!!.toLong() )
-                        }
-                        item { GridBuy(navController = navController, model =model )  }
 
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Filled.CalendarToday,
+                            contentDescription = ""
+                        )
+                        Column {
+                            Text("Fecha de Inicio")
+                            Text(micompu.startDate)
+                        }
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.Schema, contentDescription = "")
+                        Column {
+                            Text("Tipo de plan")
+                            Text(micompu.plan)
+                        }
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Filled.SettingsSystemDaydream,
+                            contentDescription = ""
+                        )
+                        Column {
+                            Text("Sistema Operativo")
+                            Text(micompu.sistemaOperativo)
+                        }
                     }
                 }
-            }
+                Column(
+                    modifier = Modifier
+                        .padding(15.dp)
+                        .weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally
 
-        GiftCode(model = model)
+                ) {
+                    Icon(Icons.Filled.WatchLater, contentDescription = "")
+                    Text("tiempo restante")
+                    Text(micompu.tiempoDisponible)
+
+
+                }
+            }
+            Row(modifier = Modifier.padding(15.dp)) {
+                Button(
+                    modifier = Modifier.padding(5.dp),
+                    onClick = {//aca para conectar
+                }) {
+                    Text(text = "RECARGA UN PLAN")
+                }
+                Button(
+                    modifier = Modifier.padding(5.dp),
+                    onClick = {
+                        navController.navigate("remoto")
+                        model.linkmaquina.postValue(micompu.url)
+                        //model.startJSON(id)
+                    }) {
+                    Text(text = siono(micompu.planActivo))
+                }
+            }
+        }
     }
 }
 
-@ExperimentalAnimationApi
-@Composable
-fun ComputerScreen(navController: NavController,model: MainViewModel,shared: SharedPreferences,conectar:Boolean){
 
+
+@Composable
+fun ComputerRow(navController: NavController,model: MainViewModel,shared: SharedPreferences,conectar:Boolean){
     val (computers, setcomputers) =  remember { mutableStateOf(listOf<UserMachine>()) }
     var textresponseP by remember { mutableStateOf("") }
+    val (idP, setidP) =  remember { mutableStateOf<Long>(0) }
     conectar.let {
-        if(it){
-            if (computers.isEmpty()){
-                model.cimputerJSON(shared.getString("id","")!!.toLong(),setcomputers)
-                textresponseP="Bienvenido a Qinaya:"
+        if (it) {
+            if (computers.isEmpty()) {
+                model.cimputerJSON(shared.getString("id", "")!!.toLong(), setcomputers)
+                textresponseP = "Bienvenido a Qinaya:"
             }
-        }else{
+        } else {
             setcomputers(listOf())
-            textresponseP="No hay internet"
+            textresponseP = "No hay internet"
         }
     }
 
-    Column(verticalArrangement = Arrangement.Center,horizontalAlignment = Alignment.CenterHorizontally,modifier = Modifier
-        .fillMaxWidth()
-        .padding(8.dp)
-        .background(MaterialTheme.colors.background)) {
-        //Text(textresponseP)
-        LazyColumn{
-            items(computers){micompu->
-                Mymachine(micompu = micompu,navController = navController,model = model,id = shared.getString("id","")!!.toLong() )
-                //MyLinux(micompu = micompu,navController = navController,model = model,id = shared.getString("id","")!!.toLong() )
+
+        Card(modifier = Modifier.height(500.dp),
+            shape = RoundedCornerShape(50.dp)) {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colors.primaryVariant)
+            ) {
+                Text(text = "Mis Compus", fontSize = 30.sp, color = Color.White)
+                LazyRow {
+                    items(computers) { micompu ->
+                        RowMachine(
+                            micompu = micompu,
+                            model = model,
+                            id = shared.getString("id", "")!!.toLong(),
+                            idP = idP,
+                            setMainB = setidP
+
+                        ) //MyLinux(micompu = micompu,navController = navController,model = model,id = shared.getString("id","")!!.toLong() )
+
+                    }
+                    item { RowBuy(navController = navController, model =model )  }
+
+                }
             }
+        }
 
+
+
+}
+
+@OptIn(ExperimentalAnimationApi::class)
+@Composable
+fun RowMachine(micompu:UserMachine,model: MainViewModel,id:Long,idP:Long, setMainB: (Long) -> Unit){
+    Card (modifier = Modifier
+        .height(400.dp)
+        .clickable {
+            setMainB(id)
+            model.UserCom1.postValue(micompu)
 
         }
-        GiftCode(model = model)
+        .fillMaxWidth()
+        .padding(15.dp)
+        , shape = RoundedCornerShape(50.dp)
+    ) {
+
+            Column(horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+
+                    modifier = Modifier
+                        .width(200.dp)
+                        .padding(15.dp)
+            ) {
+
+
+                Text(fontSize = 20.sp, text = micompu.nombreMaquina)
+                Text(text = micompu.tiempoDisponible)
+
+            }
     }
+
 }
+
 
 @Composable
 fun Remoto(model: MainViewModel,navController: NavController){
@@ -466,6 +624,7 @@ fun GiftCode(model: MainViewModel){
     val (showDialog, setShowDialog) =  remember { mutableStateOf(false) }
     val scrollState= rememberScrollState()
     Card (modifier = Modifier
+        .height(600.dp)
         .fillMaxWidth()
         .padding(15.dp)
         , shape = RoundedCornerShape(50.dp)
@@ -531,109 +690,7 @@ fun AppBarReturn(navController: NavController,pageM:String){
     )
 
 }
-@ExperimentalAnimationApi
-@Composable
-fun Gridmachine(micompu:UserMachine,navController:NavController,model: MainViewModel,id:Long) {
-    var expaned by remember{ mutableStateOf(false)}
-    Card (modifier = Modifier
-        .clickable { expaned = !expaned }
-        .fillMaxWidth()
-        .padding(15.dp)
-        , shape = RoundedCornerShape(50.dp)
-    ){
-        Column(modifier=Modifier.padding(15.dp),
-            horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(fontSize = 20.sp,text = micompu.nombreMaquina)
-            Text(text = micompu.tiempoDisponible)
-            Button(
-                modifier = Modifier.padding(5.dp),
-                onClick = {
-                    navController.navigate("remoto")
-                    model.linkmaquina.postValue(micompu.url)
-                    model.startJSON(id)
-                }) {
-                Text(text = siono(micompu.planActivo))
-            }
-            AnimatedVisibility(visible = (expaned)) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        Column(
-                            modifier = Modifier
-                                .padding(15.dp)
-                                .weight(1f),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
 
-
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Filled.CalendarToday, contentDescription = "")
-                                Column {
-                                    Text("Fecha de Inicio")
-                                    Text(micompu.startDate)
-                                }
-                            }
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Filled.Schema, contentDescription = "")
-                                Column {
-                                    Text("Tipo de plan")
-                                    Text(micompu.plan)
-                                }
-                            }
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Filled.SettingsSystemDaydream, contentDescription = "")
-                                Column {
-                                    Text("Sistema Operativo")
-                                    Text(micompu.sistemaOperativo)
-                                }
-                            }
-                        }
-                        Column(
-                            modifier = Modifier
-                                .padding(15.dp)
-                                .weight(1f),
-                            horizontalAlignment = Alignment.CenterHorizontally
-
-                        ) {
-                            Icon(Icons.Filled.WatchLater, contentDescription = "")
-                            Text("tiempo restante")
-                            Text(micompu.tiempoDisponible)
-
-
-                        }
-                    }
-                    Row(modifier = Modifier.padding(15.dp)) {
-                        Button(onClick = {//aca para conectar
-                        }) {
-                            Text(text = "RECARGA UN PLAN")
-                        }
-                    }
-                    /*Row() {
-                        Button(onClick = {//aca para conectar
-                        }) {
-                            Icon(
-                                Icons.Filled.ShoppingCart,
-                                contentDescription = "Localized description"
-                            )
-                            Text(text = "COMPRAR COMPU")
-                        }
-                        IconButton(onClick = {
-
-                        }) {
-                            Icon(
-                                Icons.Filled.CardGiftcard,
-                                contentDescription = "Localized description"
-                            )
-                        }
-                    }*/
-                }
-            }
-
-        }
-
-    }
-}
 
 fun siono(nn:Boolean):String{
     return if (nn) {
@@ -642,11 +699,33 @@ fun siono(nn:Boolean):String{
         "Recarga compu"
     }
 }
+
+@Composable
+fun RowBuy(navController:NavController,model: MainViewModel) {
+    Card (modifier = Modifier
+        .height(400.dp)
+        .clickable { model.UserCom1.postValue(null)}
+        .width(215.dp)
+        .padding(15.dp)
+        , shape = RoundedCornerShape(50.dp)
+    ){
+        Column(modifier=Modifier.padding(15.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Icon(Icons.Filled.Add, contentDescription = "Localized description")
+            Text(fontSize = 20.sp,text = "Nueva Compu")
+            Text(text = "Compra una nueva compu")
+        }
+
+    }
+}
+
 @ExperimentalAnimationApi
 @Composable
 fun GridBuy(navController:NavController,model: MainViewModel) {
     Card (modifier = Modifier
-        .clickable { navController.navigate("store")}
+        .clickable { model.UserCom1.postValue(null)}
         .fillMaxWidth()
         .padding(15.dp)
         , shape = RoundedCornerShape(50.dp)
@@ -661,194 +740,6 @@ fun GridBuy(navController:NavController,model: MainViewModel) {
     }
 }
 
-
-@ExperimentalAnimationApi
-@Composable
-fun Mymachine(micompu:UserMachine,navController:NavController,model: MainViewModel,id:Long){
-    var expaned by remember{ mutableStateOf(false)}
-    Card (modifier = Modifier
-        .clickable { expaned = !expaned }
-        .fillMaxWidth()
-        .padding(15.dp)
-    , shape = RoundedCornerShape(50.dp)
-
-    ){
-        Column(modifier=Modifier.padding(15.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Row(modifier = Modifier
-                .fillMaxWidth()
-                .padding(15.dp)) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(fontSize = 20.sp,text = micompu.nombreMaquina)
-                    Text(text = micompu.tiempoDisponible)
-                }
-                Button(
-                    onClick = {
-                    navController.navigate("remoto")
-                    model.linkmaquina.postValue(micompu.url)
-                    model.startJSON(id)
-                }) {
-                    Text(text = "CONECTAR")
-                }
-            }
-            AnimatedVisibility(visible = (expaned)) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        Column(
-                            modifier = Modifier
-                                .padding(15.dp)
-                                .weight(1f),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-
-
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Filled.CalendarToday, contentDescription = "")
-                                Column {
-                                    Text("Fecha de Inicio")
-                                    Text(micompu.startDate)
-                                }
-                            }
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Filled.Schema, contentDescription = "")
-                                Column {
-                                    Text("Tipo de plan")
-                                    Text(micompu.plan)
-                                }
-                            }
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Filled.SettingsSystemDaydream, contentDescription = "")
-                                Column {
-                                    Text("Sistema Operativo")
-                                    Text(micompu.sistemaOperativo)
-                                }
-                            }
-                        }
-                        Column(
-                            modifier = Modifier
-                                .padding(15.dp)
-                                .weight(1f),
-                            horizontalAlignment = Alignment.CenterHorizontally
-
-                        ) {
-                            Icon(Icons.Filled.WatchLater, contentDescription = "")
-                            Text("tiempo restante")
-                            Text(micompu.tiempoDisponible)
-
-
-                        }
-                    }
-                    Row(modifier = Modifier.padding(15.dp)) {
-                        Button(onClick = {//aca para conectar
-                        }) {
-                            Text(text = "RECARGA UN PLAN")
-                        }
-                    }
-                    /*Row() {
-                        Button(onClick = {//aca para conectar
-                        }) {
-                            Icon(
-                                Icons.Filled.ShoppingCart,
-                                contentDescription = "Localized description"
-                            )
-                            Text(text = "COMPRAR COMPU")
-                        }
-                        IconButton(onClick = {
-
-                        }) {
-                            Icon(
-                                Icons.Filled.CardGiftcard,
-                                contentDescription = "Localized description"
-                            )
-                        }
-                    }*/
-                }
-            }
-        }
-
-    }
-}
-
-
-@Composable
-fun MyLinux(micompu:UserMachine,navController:NavController,model: MainViewModel,id:Long){
-    Card (modifier = Modifier
-        .fillMaxWidth()
-        .padding(15.dp)
-        .border(1.dp, Color.Black)){
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(text = micompu.nombreMaquina)
-            Row() {
-                Column(modifier = Modifier
-                    .fillMaxWidth(0.5f)) {
-
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.CalendarToday, contentDescription = "")
-                        Column {
-                            Text("Fecha de Inicio")
-                            Text(micompu.startDate)
-                        }
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.Schema, contentDescription = "")
-                        Column {
-                            Text("Tipo de plan")
-                            Text(micompu.plan)
-                        }
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.SettingsSystemDaydream, contentDescription = "")
-                        Column {
-                            Text("Sistema Operativo")
-                            Text(micompu.plan)
-                        }
-                    }
-                }
-                Column(modifier = Modifier
-                    .fillMaxWidth(0.5f)) {
-                    Column {
-                        Icon(Icons.Filled.WatchLater, contentDescription = "")
-                        Text("tiempo restante")
-                        Text("0:00")
-                    }
-                    
-                }
-            }
-            Row() {
-                Button(onClick = {//aca para conectar
-                }) {
-                    Text(text = "RECARGA UN PLAN")
-                }
-                Button(onClick = {
-                    navController.navigate("remoto")
-                    model.linkmaquina.postValue(micompu.url)
-                    model.startJSON(id)
-                }) {
-                    Text(text = "CONECTAR")
-                }
-            }
-            Row() {
-                Button(onClick = {//aca para conectar
-                }) {
-                    Icon(Icons.Filled.ShoppingCart, contentDescription = "Localized description")
-                    Text(text = "COMPRAR COMPU")
-                }
-                IconButton(onClick = {
-
-                }) {
-                    Icon(Icons.Filled.CardGiftcard, contentDescription = "Localized description")
-                }
-            }
-        }
-
-    }
-}
 
 @Preview(showBackground = true)
 @Composable
